@@ -20,7 +20,7 @@ namespace Tom
                 {
                     Parameters = dict
                         .Select(o => o.Value is SqlParameter ?
-                            (SqlParameter)o.Value :
+                            CopySqlParameter(o.Value as SqlParameter) :
                             new SqlParameter(o.Key, o.Value)
                         )
                         .ToArray(),
@@ -33,6 +33,7 @@ namespace Tom
                 var qd = new QueryDefinition
                 {
                     Parameters = (example as IEnumerable<SqlParameter>)
+                        .Select(param => CopySqlParameter(param))
                         .ToArray(),
                 };
                 qd.UpdateValues = qd.ParametersParametersUpdater;
@@ -43,12 +44,31 @@ namespace Tom
                 var qd = new QueryDefinition
                 {
                     Parameters = example.GetType().GetProperties()
-                        .Select(o => new SqlParameter(o.Name, o.GetValue(example)))
+                        .Select(o => new { o.Name, Value = o.GetValue(example) })
+                        .Select(o => o.Value is SqlParameter ?
+                            CopySqlParameter(o.Value as SqlParameter) :
+                            new SqlParameter(o.Name, o.Value)
+                        )
                         .ToArray(),
                 };
                 qd.UpdateValues = qd.ObjectParametersUpdater;
                 return qd;
             }
+        }
+
+        private static SqlParameter CopySqlParameter(SqlParameter param)
+        {
+            return new SqlParameter(
+                parameterName: param.ParameterName,
+                dbType: param.SqlDbType,
+                size: param.Size,
+                direction: param.Direction,
+                isNullable: param.IsNullable,
+                precision: param.Precision,
+                scale: param.Scale,
+                sourceColumn: param.SourceColumn,
+                sourceVersion: param.SourceVersion,
+                value: param.Value);
         }
 
         /// <summary>
