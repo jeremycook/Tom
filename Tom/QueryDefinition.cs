@@ -51,6 +51,11 @@ namespace Tom
             }
         }
 
+        /// <summary>
+        /// Use the static <see cref="Create(object)"/> method instead.
+        /// </summary>
+        private QueryDefinition() { }
+
         public SqlParameter[] Parameters { get; private set; }
 
         public Action<object> UpdateValues { get; private set; }

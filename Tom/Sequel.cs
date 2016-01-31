@@ -39,7 +39,7 @@ namespace Tom
         {
             if (parameters == null)
             {
-                throw new ArgumentNullException("paramiters");
+                throw new ArgumentNullException("parameters");
             }
 
             SqlParameter[] sqlparameters = parameters.GetType().GetProperties()
@@ -53,15 +53,15 @@ namespace Tom
                 var reader = await cmd.ExecuteReaderAsync();
 
                 var fields = Enumerable.Range(0, reader.FieldCount).Select(i => reader.GetName(i)).ToArray();
-                var map = typeof(TModel).GetProperties().ToDictionary(o => o.Name);
+                var props = typeof(TModel).GetProperties().ToDictionary(o => o.Name);
 
                 var results = new List<TModel>();
                 while (await reader.ReadAsync())
                 {
                     var model = Activator.CreateInstance<TModel>();
-                    foreach (var field in fields)
+                    foreach (var name in fields)
                     {
-                        map[field].SetValue(model, reader[field]);
+                        props[name].SetValue(model, reader[name]);
                     }
                     results.Add(model);
                 }
