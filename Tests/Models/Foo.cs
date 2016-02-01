@@ -10,6 +10,6 @@ namespace Tests.Models
     {
         public Guid Id { get; set; }
         public int Int { get; set; }
-        public string Text { get; set; }
+        public string Nvarchar { get; set; }
     }
 }

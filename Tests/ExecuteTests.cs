@@ -35,9 +35,9 @@ namespace Tests
         public async Task ExecuteWithDictionaries()
         {
             await sql.ExecuteAsync(
-                "insert into Foo (Int, Text) values (@Int, @Text)",
+                "insert into Foo (Int, Nvarchar) values (@Int, @Nvarchar)",
                 Enumerable.Range(0, 1000).Select(i =>
-                    new Dictionary<string, object> { { "Int", i }, { "Text", "Dictionaried" } }
+                    new Dictionary<string, object> { { "Int", i }, { "Nvarchar", "Dictionaried" } }
                 )
             );
         }
@@ -46,9 +46,9 @@ namespace Tests
         public async Task ExecuteWithObjects()
         {
             await sql.ExecuteAsync(
-                "insert into Foo (Int, Text) values (@Int, @Text)",
+                "insert into Foo (Int, Nvarchar) values (@Int, @Nvarchar)",
                 Enumerable.Range(1000, 1000).Select(i =>
-                    new { Int = i, Text = "Objected" }
+                    new { Int = i, Nvarchar = "Objected" }
                 )
             );
         }
