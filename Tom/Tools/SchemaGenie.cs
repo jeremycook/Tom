@@ -98,8 +98,7 @@ CREATE TABLE [dbo].[{0}] (
         ALLOW_PAGE_LOCKS = ON
     ) ON [PRIMARY]
 ) ON [PRIMARY]
-GO
-", root.TableName, fieldsText, primaryKeyText);
+GO", root.TableName, fieldsText, primaryKeyText);
             return sql;
         }
     }

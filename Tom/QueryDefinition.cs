@@ -44,10 +44,13 @@ namespace Tom
                 var qd = new QueryDefinition
                 {
                     Parameters = example.GetType().GetProperties()
-                        .Select(o => new { o.Name, Value = o.GetValue(example) })
+                        .Select(o => new { o.Name, Type = o.PropertyType, Value = o.GetValue(example) })
                         .Select(o => o.Value is SqlParameter ?
                             CopySqlParameter(o.Value as SqlParameter) :
-                            new SqlParameter(o.Name, o.Value)
+                            new SqlParameter(o.Name, dbType: SqlMappings.SqlDbTypes[o.Type])
+                            {
+                                IsNullable = o.Type.IsGenericType && o.Type.GetGenericTypeDefinition() == typeof(Nullable<>),
+                            }
                         )
                         .ToArray(),
                 };
@@ -85,9 +88,19 @@ namespace Tom
             var dict = (IDictionary<string, object>)item;
             foreach (var param in Parameters)
             {
-                param.Value = dict[param.ParameterName] is SqlParameter ?
-                    (dict[param.ParameterName] as SqlParameter).Value :
-                    dict[param.ParameterName];
+                object value = dict[param.ParameterName];
+                if (value is SqlParameter)
+                {
+                    param.Value = (value as SqlParameter).Value;
+                }
+                else if (value == null)
+                {
+                    param.Value = DBNull.Value;
+                }
+                else
+                {
+                    param.Value = value;
+                }
             }
         }
 
@@ -106,9 +119,18 @@ namespace Tom
             foreach (var param in Parameters)
             {
                 object value = props[param.ParameterName].GetValue(item);
-                param.Value = value is SqlParameter ?
-                    (value as SqlParameter).Value :
-                    value;
+                if (value is SqlParameter)
+                {
+                    param.Value = (value as SqlParameter).Value;
+                }
+                else if (value == null)
+                {
+                    param.Value = SqlMappings.NullValues[props[param.ParameterName].PropertyType]();
+                }
+                else
+                {
+                    param.Value = value;
+                }
             }
         }
 

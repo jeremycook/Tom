@@ -37,7 +37,7 @@ namespace Tom
             { typeof(byte[]), SqlDbType.VarBinary },
         };
 
-        public static readonly Dictionary<Type, string> Arguments = new Dictionary<Type, string>
+        public static readonly Dictionary<Type, string> FieldArguments = new Dictionary<Type, string>
         {
             { typeof(Guid), null },
             { typeof(Guid?), null },
@@ -65,9 +65,9 @@ namespace Tom
             { typeof(byte[]), null },
         };
 
-        public static readonly Dictionary<Type, string> DefaultValues = new Dictionary<Type, string>
+        public static readonly Dictionary<Type, string> DefaultFieldValues = new Dictionary<Type, string>
         {
-            { typeof(Guid), "(newid())" },
+            { typeof(Guid), null },
             { typeof(Guid?), null },
 
             { typeof(int), "(0)" },
@@ -79,10 +79,10 @@ namespace Tom
             { typeof(double), "(0)" },
             { typeof(double?), null },
 
-            { typeof(DateTime), "(getutcdate())" },
+            { typeof(DateTime), null },
             { typeof(DateTime?), null },
 
-            { typeof(DateTimeOffset), "(getutcdate())" },
+            { typeof(DateTimeOffset), null },
             { typeof(DateTimeOffset?), null },
 
             { typeof(bool), "(0)" },
@@ -93,10 +93,29 @@ namespace Tom
             { typeof(byte[]), null },
         };
 
-        public static readonly Dictionary<Type, string> InitValues = new Dictionary<Type, string>
+        public static readonly Dictionary<Type, Func<object>> NullValues = new Dictionary<Type, Func<object>>
+        {
+            { typeof(Guid?), () => DBNull.Value },
+            { typeof(int?), () => DBNull.Value },
+            { typeof(decimal?), () => DBNull.Value },
+            { typeof(double?), () => DBNull.Value },
+            { typeof(DateTime?), () => DBNull.Value },
+            { typeof(DateTimeOffset?), () => DBNull.Value },
+            { typeof(bool?), () => DBNull.Value },
+            { typeof(string), () => "" },
+            { typeof(byte[]), () => DBNull.Value },
+        };
+
+        public static readonly Dictionary<Type, string> InitFieldValues = new Dictionary<Type, string>
         {
             { typeof(Guid), "(newid())" },
             { typeof(Guid?), "(newid())" },
+
+            { typeof(DateTime), "(sysutcdatetime())" },
+            { typeof(DateTime?), "(sysutcdatetime())" },
+
+            { typeof(DateTimeOffset), "(sysdatetimeoffset())" },
+            { typeof(DateTimeOffset?), "(sysdatetimeoffset())" },
         };
     }
 }

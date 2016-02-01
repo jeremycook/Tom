@@ -21,9 +21,15 @@ namespace Tests
 
             sql.ExecuteAsync("truncate table dbo.Foo").Wait();
             sql.ExecuteAsync(
-                "insert into Foo (Int) values (@Int)",
-                Enumerable.Range(0, 1000).Select(i =>
-                    new { Int = i }
+                "insert into Foo (Guid, Int, DateTime2, DateTimeOffset) values (@Guid, @Int, @DateTime2, @DateTimeOffset)",
+                Enumerable.Range(1000, 1000).Select(i =>
+                    new
+                    {
+                        Guid = Guid.NewGuid(),
+                        Int = i,
+                        DateTime2 = DateTime.UtcNow,
+                        DateTimeOffset = DateTimeOffset.Now,
+                    }
                 )
             ).Wait();
         }

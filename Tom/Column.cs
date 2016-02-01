@@ -31,32 +31,32 @@ namespace Tom
 
         private static string GetDefaultValue(PropertyInfo property)
         {
-            if (!SqlMappings.DefaultValues.ContainsKey(property.PropertyType))
+            if (!SqlMappings.DefaultFieldValues.ContainsKey(property.PropertyType))
             {
                 throw new ArgumentException(string.Format("SqlMappings.DefaultValues does not contain the type '{0}'.", property.PropertyType), "property");
             }
 
-            return SqlMappings.DefaultValues[property.PropertyType];
+            return SqlMappings.DefaultFieldValues[property.PropertyType];
         }
 
         private static string GetArguments(PropertyInfo property)
         {
-            if (!SqlMappings.Arguments.ContainsKey(property.PropertyType))
+            if (!SqlMappings.FieldArguments.ContainsKey(property.PropertyType))
             {
                 throw new ArgumentException(string.Format("SqlMappings.Arguments does not contain the type '{0}'.", property.PropertyType), "property");
             }
-            
-            return SqlMappings.Arguments[property.PropertyType];
+
+            return SqlMappings.FieldArguments[property.PropertyType];
         }
 
         public IRoot Root { get; private set; }
-        public bool Mapped { get; private set; }
+        public bool Mapped { get; set; }
 
         public string FieldName { get; private set; }
         public SqlDbType SqlDbType { get; private set; }
         public string Arguments { get; private set; }
         public bool IsNullable { get; private set; }
-        public string DefaultValue { get; private set; }
+        public string DefaultValue { get; set; }
 
         public string Declaration()
         {
