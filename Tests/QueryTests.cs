@@ -19,10 +19,11 @@ namespace Tests
             sql = new SqlConnection(ConfigurationManager.ConnectionStrings["Db"].ConnectionString);
             sql.Open();
 
+            sql.ExecuteAsync("truncate table dbo.Foo").Wait();
             sql.ExecuteAsync(
-                "insert into Foo (Int, Nvarchar) values (@Int, @Nvarchar)",
+                "insert into Foo (Int) values (@Int)",
                 Enumerable.Range(0, 1000).Select(i =>
-                    new { Int = i, Nvarchar = "Objected" }
+                    new { Int = i }
                 )
             ).Wait();
         }

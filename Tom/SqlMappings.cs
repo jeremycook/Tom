@@ -29,6 +29,9 @@ namespace Tom
             { typeof(DateTimeOffset), SqlDbType.DateTimeOffset },
             { typeof(DateTimeOffset?), SqlDbType.DateTimeOffset },
 
+            { typeof(bool), SqlDbType.Bit },
+            { typeof(bool?), SqlDbType.Bit },
+
             { typeof(string), SqlDbType.NVarChar },
 
             { typeof(byte[]), SqlDbType.VarBinary },
@@ -54,6 +57,9 @@ namespace Tom
             { typeof(DateTimeOffset), "(7)" },
             { typeof(DateTimeOffset?), "(7)" },
 
+            { typeof(bool), null },
+            { typeof(bool?), null },
+
             { typeof(string), "(100)" },
 
             { typeof(byte[]), null },
@@ -78,6 +84,9 @@ namespace Tom
 
             { typeof(DateTimeOffset), "(getutcdate())" },
             { typeof(DateTimeOffset?), null },
+
+            { typeof(bool), "(0)" },
+            { typeof(bool?), null },
 
             { typeof(string), "('')" },
 

@@ -12,5 +12,6 @@ namespace Tests.Models
         public Db(string connectionStringOrName) : base(connectionStringOrName) { }
 
         public Root<Foo> Foos { get; private set; }
+        public Root<Data> Data { get; private set; }
     }
 }

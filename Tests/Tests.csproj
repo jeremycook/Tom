@@ -53,6 +53,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="ExecuteTests.cs" />
+    <Compile Include="Models\Data.cs" />
     <Compile Include="Models\Db.cs" />
     <Compile Include="Models\Foo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

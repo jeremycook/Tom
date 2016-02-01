@@ -18,6 +18,7 @@ namespace Tests
         {
             sql = new SqlConnection(ConfigurationManager.ConnectionStrings["Db"].ConnectionString);
             sql.Open();
+
             sql.ExecuteAsync("truncate table dbo.Foo").Wait();
         }
 
