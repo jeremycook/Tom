@@ -12,7 +12,7 @@ namespace Tom
         Type ModelType { get; }
         string TableName { get; }
         IEnumerable<Column> Columns { get; }
-        IEnumerable<string> PrimaryKey { get; }
+        IEnumerable<Column> PrimaryKey { get; }
     }
 
     public class Root<TModel> : IRoot
@@ -27,7 +27,7 @@ namespace Tom
                 .ToArray();
 
             var pk = Columns.First();
-            PrimaryKey = new[] { pk.FieldName };
+            PrimaryKey = new[] { pk };
             if (pk.SqlDbType == System.Data.SqlDbType.UniqueIdentifier)
             {
                 pk.DefaultValue = "(newid())";
@@ -65,10 +65,48 @@ namespace Tom
             await cx.ExecuteAsync(command, args: models as IEnumerable<object>, transaction: Tom.Transaction);
         }
 
+        /// <summary>
+        /// Update a <typeparamref name="TModel"/> within a transaction.
+        /// Call <see cref="TomBase.Commit"/> to save changes.
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public async Task UpdateAsync(TModel model)
+        {
+            await UpdateRangeAsync(new[] { model });
+        }
+
+        /// <summary>
+        /// Update a range of <typeparamref name="TModel"/> within a transaction.
+        /// Call <see cref="TomBase.Commit"/> to save changes.
+        /// </summary>
+        /// <param name="models"></param>
+        /// <returns></returns>
+        public async Task UpdateRangeAsync(IEnumerable<TModel> models)
+        {
+            var cx = await Tom.UseConnectionAsync();
+
+            var mappedColumns = Columns.Except(PrimaryKey)
+                .Where(o => o.Mapped)
+                .ToArray();
+
+            string command = string.Format(
+@"update dbo.[{0}]
+set
+    {1}
+where {2}",
+                TableName,
+                string.Join(",\n    ", mappedColumns.Select(o => "[" + o.FieldName + "] = @" + o.FieldName)),
+                string.Join(", ", PrimaryKey.Select(o => "[" + o.FieldName + "] = @" + o.FieldName))
+            );
+
+            await cx.ExecuteAsync(command, args: models as IEnumerable<object>, transaction: Tom.Transaction);
+        }
+
         public TomBase Tom { get; private set; }
         public Type ModelType { get; private set; }
         public string TableName { get; set; }
         public IEnumerable<Column> Columns { get; private set; }
-        public IEnumerable<string> PrimaryKey { get; set; }
+        public IEnumerable<Column> PrimaryKey { get; set; }
     }
 }

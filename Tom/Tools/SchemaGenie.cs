@@ -82,7 +82,7 @@ GO
             var fieldDeclarations = root.Columns.Select(o => o.Declaration());
             string fieldsText = string.Join(",\n    ", fieldDeclarations);
 
-            string primaryKeyText = string.Join(", ", root.PrimaryKey);
+            string primaryKeyText = string.Join(", ", root.PrimaryKey.Select(o => o.FieldName));
 
             string sql = string.Format(@"
 CREATE TABLE [dbo].[{0}] (
