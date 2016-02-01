@@ -61,7 +61,8 @@ namespace Tom
                     var model = Activator.CreateInstance<TModel>();
                     foreach (var name in fields)
                     {
-                        props[name].SetValue(model, reader[name]);
+                        object value = reader[name];
+                        props[name].SetValue(model, value == DBNull.Value ? null : value);
                     }
                     results.Add(model);
                 }

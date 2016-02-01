@@ -45,6 +45,7 @@
     <Compile Include="SqlMappings.cs" />
     <Compile Include="TomBase.cs" />
     <Compile Include="Tools\SchemaGenie.cs" />
+    <Compile Include="Work.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

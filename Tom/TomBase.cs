@@ -10,8 +10,6 @@ namespace Tom
 {
     public abstract class TomBase : IDisposable
     {
-        private SqlConnection _Connection;
-
         public TomBase(string connectionStringOrName)
         {
             ConnectionString = ConfigurationManager.ConnectionStrings[connectionStringOrName] != null ?
@@ -51,67 +49,55 @@ namespace Tom
 
         public string ConnectionString { get; private set; }
         public IEnumerable<IRoot> Roots { get; private set; }
-        public SqlTransaction Transaction { get; private set; }
+        public Work Work { get; private set; }
 
         /// <summary>
         /// Returns the open connection, or opens a connection and begins a
-        /// <see cref="Transaction"/> if a connection is not open. Call <see cref="Commit"/>
+        /// <see cref="Tom.Work"/> if a connection is not open. Call <see cref="Commit"/>
         /// after performing create, update, delete operations to save changes.
         /// </summary>
         /// <returns></returns>
-        public async Task<SqlConnection> UseConnectionAsync()
+        public async Task<Work> WorkAsync()
         {
-            if (_Connection == null)
+            if (Work == null)
             {
-                _Connection = new SqlConnection(ConnectionString);
-                await _Connection.OpenAsync();
-                Transaction = _Connection.BeginTransaction();
+                Work = await Work.CreateAsync(ConnectionString);
             }
 
-            return _Connection;
+            return Work;
         }
 
         /// <summary>
         /// Commits the current transaction on the open connection, and then
         /// closes and disposes the transaction and connection.
-        /// <see cref="UseConnectionAsync"/> must be called prior to calling
-        /// this method.
         /// </summary>
         /// <exception cref="InvalidOperationException">
-        /// <see cref="UseConnectionAsync"/> must be called prior to calling this method.
+        /// <see cref="WorkAsync"/> must be called prior to calling this method.
         /// </exception>
         public virtual void Commit()
         {
-            if (_Connection == null)
+            if (Work == null)
             {
-                throw new InvalidOperationException("No open connection. `UseConnectionAsync` must be called prior to calling this method.");
+                throw new InvalidOperationException("No open connection. `WorkAsync` must be called prior to calling this method.");
             }
 
-            try
-            {
-                Transaction.Commit();
-            }
-            finally
-            {
-                Transaction.Dispose();
-                _Connection.Dispose();
-                Transaction = null;
-                _Connection = null;
-            }
+            // Commit...
+            Work.Transaction.Commit();
+            // and cleanup.
+            Work.Dispose();
+            Work = null;
         }
 
         /// <summary>
-        /// Dispose and nulls <see cref="Transaction"/> and connection if the
+        /// Dispose and nulls <see cref="Tom.Work"/> and connection if the
         /// connection is not null.
         /// </summary>
         public void Dispose()
         {
-            if (_Connection != null)
+            if (Work != null)
             {
-                Transaction.Dispose();
-                _Connection.Dispose();
-                Transaction = null;
-                _Connection = null;
+                Work.Dispose();
+                Work = null;
             }
         }
     }

@@ -1,10 +1,10 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Tests.Models;
-using System.Threading.Tasks;
-using System.Linq;
-using Tom;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Data.SqlClient;
+using System.Linq;
+using System.Threading.Tasks;
+using Tests.Models;
+using Tom;
 
 namespace Tests
 {
@@ -27,6 +27,24 @@ namespace Tests
         public void Dispose()
         {
             db.Dispose();
+        }
+
+
+        [TestMethod]
+        public async Task ListFoos()
+        {
+            await db.Foos.AddRangeAsync(Enumerable.Range(0, 1000).Select(i => new Foo
+            {
+                Id = Guid.NewGuid(),
+                Int = i,
+            }));
+            db.Commit();
+
+            await db.Foos.ListAsync("Int between @Lower and @Upper", new
+            {
+                Lower = 500,
+                Upper = 600
+            });
         }
 
 
@@ -74,6 +92,7 @@ namespace Tests
             var foos = Enumerable.Range(0, 1000).Select(i => new Foo
             {
                 Id = Guid.NewGuid(),
+                Nvarchar = "Created",
             }).ToList();
             await db.Foos.AddRangeAsync(foos);
             db.Commit();

@@ -34,6 +34,27 @@ namespace Tom
             }
         }
 
+        public async Task<IEnumerable<TModel>> ListAsync(string filter, object parameters)
+        {
+            using (var cx = new SqlConnection(Tom.ConnectionString))
+            {
+                await cx.OpenAsync();
+
+                var mappedColumns = Columns.Where(o => o.Mapped).ToArray();
+                var results = await cx.ListAsync<TModel>(string.Format(
+                        "select {0} from dbo.[{1}] where {2}",
+                        string.Join(", ", mappedColumns.Select(o => "[" + o.FieldName + "]")),
+                        TableName,
+                        filter
+                    ),
+                    parameters
+                );
+
+                return results;
+            };
+        }
+
+
         /// <summary>
         /// Add a <typeparamref name="TModel"/> within a transaction.
         /// Call <see cref="TomBase.Commit"/> to save changes.
@@ -53,7 +74,7 @@ namespace Tom
         /// <returns></returns>
         public async Task AddRangeAsync(IEnumerable<TModel> models)
         {
-            var cx = await Tom.UseConnectionAsync();
+            var work = await Tom.WorkAsync();
 
             var mappedColumns = Columns.Where(o => o.Mapped).ToArray();
             string command = string.Format("insert into dbo.[{0}]\n({1})\nvalues ({2})",
@@ -62,7 +83,7 @@ namespace Tom
                 string.Join(", ", mappedColumns.Select(o => "@" + o.FieldName))
             );
 
-            await cx.ExecuteAsync(command, args: models as IEnumerable<object>, transaction: Tom.Transaction);
+            await work.Connection.ExecuteAsync(command, args: models as IEnumerable<object>, transaction: work.Transaction);
         }
 
         /// <summary>
@@ -84,7 +105,7 @@ namespace Tom
         /// <returns></returns>
         public async Task UpdateRangeAsync(IEnumerable<TModel> models)
         {
-            var cx = await Tom.UseConnectionAsync();
+            var work = await Tom.WorkAsync();
 
             var mappedColumns = Columns.Except(PrimaryKey)
                 .Where(o => o.Mapped)
@@ -100,7 +121,7 @@ where {2}",
                 string.Join(", ", PrimaryKey.Select(o => "[" + o.FieldName + "] = @" + o.FieldName))
             );
 
-            await cx.ExecuteAsync(command, args: models as IEnumerable<object>, transaction: Tom.Transaction);
+            await work.Connection.ExecuteAsync(command, args: models as IEnumerable<object>, transaction: work.Transaction);
         }
 
         /// <summary>
@@ -122,14 +143,14 @@ where {2}",
         /// <returns></returns>
         public async Task RemoveRangeAsync(IEnumerable<TModel> models)
         {
-            var cx = await Tom.UseConnectionAsync();
+            var work = await Tom.WorkAsync();
 
             string command = string.Format("delete from dbo.[{0}] where {1}",
                 TableName,
                 string.Join(", ", PrimaryKey.Select(o => "[" + o.FieldName + "] = @" + o.FieldName))
             );
 
-            await cx.ExecuteAsync(command, args: models as IEnumerable<object>, transaction: Tom.Transaction);
+            await work.Connection.ExecuteAsync(command, args: models as IEnumerable<object>, transaction: work.Transaction);
         }
 
         public TomBase Tom { get; private set; }
