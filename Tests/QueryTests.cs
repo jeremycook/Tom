@@ -2,6 +2,7 @@
 using System;
 using System.Configuration;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Threading.Tasks;
 using Tests.Models;
 using Tom;
@@ -17,6 +18,13 @@ namespace Tests
         {
             sql = new SqlConnection(ConfigurationManager.ConnectionStrings["Db"].ConnectionString);
             sql.Open();
+
+            sql.ExecuteAsync(
+                "insert into Foo (Int, Nvarchar) values (@Int, @Nvarchar)",
+                Enumerable.Range(0, 1000).Select(i =>
+                    new { Int = i, Nvarchar = "Objected" }
+                )
+            ).Wait();
         }
 
         public void Dispose()
