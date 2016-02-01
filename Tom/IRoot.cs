@@ -103,6 +103,35 @@ where {2}",
             await cx.ExecuteAsync(command, args: models as IEnumerable<object>, transaction: Tom.Transaction);
         }
 
+        /// <summary>
+        /// Remove a <typeparamref name="TModel"/> within a transaction.
+        /// Call <see cref="TomBase.Commit"/> to save changes.
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public async Task RemoveAsync(TModel model)
+        {
+            await RemoveRangeAsync(new[] { model });
+        }
+
+        /// <summary>
+        /// Remove a range of <typeparamref name="TModel"/> within a transaction.
+        /// Call <see cref="TomBase.Commit"/> to save changes.
+        /// </summary>
+        /// <param name="models"></param>
+        /// <returns></returns>
+        public async Task RemoveRangeAsync(IEnumerable<TModel> models)
+        {
+            var cx = await Tom.UseConnectionAsync();
+
+            string command = string.Format("delete from dbo.[{0}] where {1}",
+                TableName,
+                string.Join(", ", PrimaryKey.Select(o => "[" + o.FieldName + "] = @" + o.FieldName))
+            );
+
+            await cx.ExecuteAsync(command, args: models as IEnumerable<object>, transaction: Tom.Transaction);
+        }
+
         public TomBase Tom { get; private set; }
         public Type ModelType { get; private set; }
         public string TableName { get; set; }

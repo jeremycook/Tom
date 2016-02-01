@@ -29,6 +29,7 @@ namespace Tests
             db.Dispose();
         }
 
+
         [TestMethod]
         public async Task AddFoo()
         {
@@ -49,6 +50,7 @@ namespace Tests
             }));
             db.Commit();
         }
+
 
         [TestMethod]
         public async Task UpdateFoo()
@@ -81,6 +83,36 @@ namespace Tests
                 item.Nvarchar = "Updated";
             }
             await db.Foos.UpdateRangeAsync(foos);
+            db.Commit();
+        }
+
+
+        [TestMethod]
+        public async Task RemoveFoo()
+        {
+            var foo = new Foo
+            {
+                Id = Guid.NewGuid(),
+                Nvarchar = "Created",
+            };
+            await db.Foos.AddAsync(foo);
+            db.Commit();
+
+            await db.Foos.RemoveAsync(foo);
+            db.Commit();
+        }
+
+        [TestMethod]
+        public async Task RemoveRangeFoo()
+        {
+            var foos = Enumerable.Range(0, 1000).Select(i => new Foo
+            {
+                Id = Guid.NewGuid(),
+            }).ToList();
+            await db.Foos.AddRangeAsync(foos);
+            db.Commit();
+
+            await db.Foos.RemoveRangeAsync(foos);
             db.Commit();
         }
     }
