@@ -34,6 +34,33 @@ namespace Tom
             }
         }
 
+        /// <summary>
+        /// List all models.
+        /// </summary>
+        /// <returns></returns>
+        public async Task<IEnumerable<TModel>> ListAsync()
+        {
+            using (var cx = new SqlConnection(Tom.ConnectionString))
+            {
+                await cx.OpenAsync();
+
+                var mappedColumns = Columns.Where(o => o.Mapped).ToArray();
+                var results = await cx.ListAsync<TModel>(string.Format(
+                    "select {0} from dbo.[{1}]",
+                    string.Join(", ", mappedColumns.Select(o => "[" + o.FieldName + "]")),
+                    TableName
+                ));
+
+                return results;
+            };
+        }
+
+        /// <summary>
+        /// List a filtered set of models.
+        /// </summary>
+        /// <param name="filter"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
         public async Task<IEnumerable<TModel>> ListAsync(string filter, object parameters)
         {
             using (var cx = new SqlConnection(Tom.ConnectionString))

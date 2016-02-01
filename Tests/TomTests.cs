@@ -31,7 +31,20 @@ namespace Tests
 
 
         [TestMethod]
-        public async Task ListFoos()
+        public async Task ListAllFoos()
+        {
+            await db.Foos.AddRangeAsync(Enumerable.Range(0, 1000).Select(i => new Foo
+            {
+                Id = Guid.NewGuid(),
+                Int = i,
+            }));
+            db.Commit();
+
+            await db.Foos.ListAsync();
+        }
+
+        [TestMethod]
+        public async Task ListFilteredFoos()
         {
             await db.Foos.AddRangeAsync(Enumerable.Range(0, 1000).Select(i => new Foo
             {

@@ -25,7 +25,8 @@ namespace Tom
                     var model = Activator.CreateInstance<TModel>();
                     foreach (var field in fields)
                     {
-                        map[field].SetValue(model, reader[field]);
+                        object value = reader[field];
+                        map[field].SetValue(model, value == DBNull.Value ? null : value);
                     }
                     results.Add(model);
                 }
