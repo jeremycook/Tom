@@ -21,6 +21,7 @@ namespace Tests
             {
                 cx.Open();
                 cx.ExecuteAsync("truncate table dbo.Foo").Wait();
+                cx.ExecuteAsync("truncate table dbo.Secure").Wait();
             }
         }
 
@@ -79,6 +80,19 @@ namespace Tests
             {
                 Id = Guid.NewGuid(),
             }));
+            db.Commit();
+        }
+
+
+        [TestMethod]
+        public async Task AddSecure()
+        {
+            var secure = new Secure
+            {
+                Id = Guid.NewGuid(),
+                Nvarchar = "Encrypt Me",
+            };
+            await db.Secure.AddAsync(secure);
             db.Commit();
         }
 

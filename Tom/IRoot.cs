@@ -4,6 +4,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Tom.Internal;
 
 namespace Tom
 {
@@ -23,15 +24,32 @@ namespace Tom
             ModelType = typeof(TModel);
             TableName = ModelType.Name;
             Columns = ModelType.GetProperties()
-                .Select(p => new Column(this, p))
+                .Select(p => new Column(p))
                 .ToArray();
+            Command = new TomCommand<TModel>(Columns);
 
             var pk = Columns.First();
             PrimaryKey = new[] { pk };
             if (pk.SqlDbType == System.Data.SqlDbType.UniqueIdentifier)
             {
-                pk.DefaultValue = "(newid())";
+                pk.DefaultFieldValue = "(newid())";
             }
+        }
+
+        public Root<TModel> ConfigureColumn(Expression<Func<TModel, object>> selector, Action<Column> columnAction)
+        {
+            string name = selector.GetName();
+            columnAction(Columns.Single(o => o.FieldName == name));
+            return this;
+        }
+
+        public Root<TModel> ConfigureAllColumns(Action<Column> columnAction, Func<Column, bool> filter = null)
+        {
+            foreach (var param in Columns.Where(filter ?? (c => true)))
+            {
+                columnAction(param);
+            }
+            return this;
         }
 
         /// <summary>
@@ -44,7 +62,7 @@ namespace Tom
             {
                 await cx.OpenAsync();
 
-                var mappedColumns = Columns.Where(o => o.Mapped).ToArray();
+                var mappedColumns = Columns.Where(o => o.IsMapped).ToArray();
                 var results = await cx.ListAsync<TModel>(string.Format(
                     "select {0} from dbo.[{1}]",
                     string.Join(", ", mappedColumns.Select(o => "[" + o.FieldName + "]")),
@@ -67,7 +85,7 @@ namespace Tom
             {
                 await cx.OpenAsync();
 
-                var mappedColumns = Columns.Where(o => o.Mapped).ToArray();
+                var mappedColumns = Columns.Where(o => o.IsMapped).ToArray();
                 var results = await cx.ListAsync<TModel>(string.Format(
                         "select {0} from dbo.[{1}] where {2}",
                         string.Join(", ", mappedColumns.Select(o => "[" + o.FieldName + "]")),
@@ -102,15 +120,15 @@ namespace Tom
         public async Task AddRangeAsync(IEnumerable<TModel> models)
         {
             var work = await Tom.WorkAsync();
-
-            var mappedColumns = Columns.Where(o => o.Mapped).ToArray();
-            string command = string.Format("insert into dbo.[{0}]\n({1})\nvalues ({2})",
-                TableName,
-                string.Join(", ", mappedColumns.Select(o => "[" + o.FieldName + "]")),
-                string.Join(", ", mappedColumns.Select(o => "@" + o.FieldName))
+            await Command.ExecuteAsync(
+                work.Connection,
+                string.Format(
+                    "insert into dbo.{0} ({1}) values ({2})",
+                    TableName, Command.ToFieldNamesText(), Command.ToParameterNamesText()
+                ),
+                models,
+                work.Transaction
             );
-
-            await work.Connection.ExecuteAsync(command, args: models as IEnumerable<object>, transaction: work.Transaction);
         }
 
         /// <summary>
@@ -132,23 +150,20 @@ namespace Tom
         /// <returns></returns>
         public async Task UpdateRangeAsync(IEnumerable<TModel> models)
         {
+            var whereClause = string.Join(", ", PrimaryKey.Select(o => "[" + o.FieldName + "] = @" + o.FieldName));
+
             var work = await Tom.WorkAsync();
-
-            var mappedColumns = Columns.Except(PrimaryKey)
-                .Where(o => o.Mapped)
-                .ToArray();
-
-            string command = string.Format(
-@"update dbo.[{0}]
-set
-    {1}
-where {2}",
-                TableName,
-                string.Join(",\n    ", mappedColumns.Select(o => "[" + o.FieldName + "] = @" + o.FieldName)),
-                string.Join(", ", PrimaryKey.Select(o => "[" + o.FieldName + "] = @" + o.FieldName))
+            await Command.ExecuteAsync(
+                work.Connection,
+                string.Format(
+                    "update dbo.{0} set {1} where {2}",
+                    TableName,
+                    Command.ToUpdateFieldsText(),
+                    whereClause
+                ),
+                models,
+                work.Transaction
             );
-
-            await work.Connection.ExecuteAsync(command, args: models as IEnumerable<object>, transaction: work.Transaction);
         }
 
         /// <summary>
@@ -185,5 +200,6 @@ where {2}",
         public string TableName { get; set; }
         public IEnumerable<Column> Columns { get; private set; }
         public IEnumerable<Column> PrimaryKey { get; set; }
+        public TomCommand<TModel> Command { get; private set; }
     }
 }

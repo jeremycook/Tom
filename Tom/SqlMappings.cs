@@ -62,7 +62,7 @@ namespace Tom
 
             { typeof(string), "(100)" },
 
-            { typeof(byte[]), null },
+            { typeof(byte[]), "(max)" },
         };
 
         public static readonly Dictionary<Type, string> DefaultFieldValues = new Dictionary<Type, string>
@@ -93,20 +93,7 @@ namespace Tom
             { typeof(byte[]), null },
         };
 
-        public static readonly Dictionary<Type, Func<object>> NullValues = new Dictionary<Type, Func<object>>
-        {
-            { typeof(Guid?), () => DBNull.Value },
-            { typeof(int?), () => DBNull.Value },
-            { typeof(decimal?), () => DBNull.Value },
-            { typeof(double?), () => DBNull.Value },
-            { typeof(DateTime?), () => DBNull.Value },
-            { typeof(DateTimeOffset?), () => DBNull.Value },
-            { typeof(bool?), () => DBNull.Value },
-            { typeof(string), () => "" },
-            { typeof(byte[]), () => DBNull.Value },
-        };
-
-        public static readonly Dictionary<Type, string> InitFieldValues = new Dictionary<Type, string>
+        public static readonly Dictionary<Type, string> NewDbValues = new Dictionary<Type, string>
         {
             { typeof(Guid), "(newid())" },
             { typeof(Guid?), "(newid())" },
@@ -116,6 +103,46 @@ namespace Tom
 
             { typeof(DateTimeOffset), "(sysdatetimeoffset())" },
             { typeof(DateTimeOffset?), "(sysdatetimeoffset())" },
+        };
+
+        public static readonly Dictionary<Type, Func<object>> EmptyValueFactories = new Dictionary<Type, Func<object>>
+        {
+            { typeof(Guid), () => Guid.Empty },
+            { typeof(Guid?), () => DBNull.Value },
+            { typeof(int), () => 0 },
+            { typeof(int?), () => DBNull.Value },
+            { typeof(decimal), () => 0m },
+            { typeof(decimal?), () => DBNull.Value },
+            { typeof(double), () => 0d },
+            { typeof(double?), () => DBNull.Value },
+            { typeof(DateTime), () => DateTime.MinValue },
+            { typeof(DateTime?), () => DBNull.Value },
+            { typeof(DateTimeOffset), () => DateTimeOffset.MinValue },
+            { typeof(DateTimeOffset?), () => DBNull.Value },
+            { typeof(bool), () => false },
+            { typeof(bool?), () => DBNull.Value },
+            { typeof(string), () => "" },
+            { typeof(byte[]), () => DBNull.Value },
+        };
+
+        public static readonly Dictionary<Type, Func<object>> NewValueFactories = new Dictionary<Type, Func<object>>
+        {
+            { typeof(Guid), () => Guid.NewGuid() },
+            { typeof(Guid?), () => Guid.NewGuid() },
+            { typeof(int), () => 0 },
+            { typeof(int?), () => 0 },
+            { typeof(decimal), () => 0m },
+            { typeof(decimal?), () => 0m },
+            { typeof(double), () => 0d },
+            { typeof(double?), () => 0d },
+            { typeof(DateTime), () => DateTime.UtcNow },
+            { typeof(DateTime?), () => DateTime.UtcNow },
+            { typeof(DateTimeOffset), () => DateTimeOffset.Now },
+            { typeof(DateTimeOffset?), () => DateTimeOffset.Now },
+            { typeof(bool), () => false },
+            { typeof(bool?), () => false },
+            { typeof(string), () => "" },
+            { typeof(byte[]), () => DBNull.Value },
         };
     }
 }

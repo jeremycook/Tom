@@ -79,7 +79,7 @@ GO
 
         public string CreateTable(IRoot root)
         {
-            var fieldDeclarations = root.Columns.Select(o => o.Declaration());
+            var fieldDeclarations = root.Columns.Select(o => o.FieldDeclaration(root.TableName));
             string fieldsText = string.Join(",\n    ", fieldDeclarations);
 
             string primaryKeyText = string.Join(", ", root.PrimaryKey.Select(o => o.FieldName));

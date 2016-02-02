@@ -57,10 +57,12 @@
     <Compile Include="ExecuteTests.cs" />
     <Compile Include="Models\Data.cs" />
     <Compile Include="Models\Db.cs" />
+    <Compile Include="Models\Secure.cs" />
     <Compile Include="Models\Foo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QueryTests.cs" />
     <Compile Include="TomTests.cs" />
+    <Compile Include="TomCommandTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -4,68 +4,41 @@ using System.Reflection;
 
 namespace Tom
 {
-    public class Column
+    public class Column : TomParameter
     {
-        public Column(IRoot root, PropertyInfo property)
+        public Column(PropertyInfo prop)
         {
-            Root = root;
-            Mapped = true;
+            FieldName = prop.Name;
+            SqlDbType = SqlMappings.SqlDbTypes[prop.PropertyType];
+            IsNullable = prop.PropertyType.IsGenericType &&
+                prop.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>);
+            EmptyValueFactory = SqlMappings.EmptyValueFactories[prop.PropertyType];
 
-            FieldName = property.Name;
-            SqlDbType = GetSqlDbType(property);
-            Arguments = GetArguments(property);
-            IsNullable = property.PropertyType.IsGenericType &&
-                property.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>);
-            DefaultValue = GetDefaultValue(property);
+            FieldArguments = SqlMappings.FieldArguments[prop.PropertyType];
+            DefaultFieldValue = SqlMappings.DefaultFieldValues[prop.PropertyType];
         }
 
-        private static SqlDbType GetSqlDbType(PropertyInfo property)
-        {
-            if (!SqlMappings.SqlDbTypes.ContainsKey(property.PropertyType))
-            {
-                throw new ArgumentException(string.Format("SqlMappings.SqlDbTypes does not contain the type '{0}'.", property.PropertyType), "property");
-            }
+        public string FieldArguments { get; private set; }
+        public string DefaultFieldValue { get; set; }
 
-            return SqlMappings.SqlDbTypes[property.PropertyType];
+        /// <summary>
+        /// Configure this column to be secure.
+        /// </summary>
+        public override void Secure()
+        {
+            FieldArguments = SqlMappings.FieldArguments[typeof(byte[])];
+            DefaultFieldValue = SqlMappings.DefaultFieldValues[typeof(byte[])];
+            base.Secure();
         }
 
-        private static string GetDefaultValue(PropertyInfo property)
-        {
-            if (!SqlMappings.DefaultFieldValues.ContainsKey(property.PropertyType))
-            {
-                throw new ArgumentException(string.Format("SqlMappings.DefaultValues does not contain the type '{0}'.", property.PropertyType), "property");
-            }
-
-            return SqlMappings.DefaultFieldValues[property.PropertyType];
-        }
-
-        private static string GetArguments(PropertyInfo property)
-        {
-            if (!SqlMappings.FieldArguments.ContainsKey(property.PropertyType))
-            {
-                throw new ArgumentException(string.Format("SqlMappings.Arguments does not contain the type '{0}'.", property.PropertyType), "property");
-            }
-
-            return SqlMappings.FieldArguments[property.PropertyType];
-        }
-
-        public IRoot Root { get; private set; }
-        public bool Mapped { get; set; }
-
-        public string FieldName { get; private set; }
-        public SqlDbType SqlDbType { get; private set; }
-        public string Arguments { get; private set; }
-        public bool IsNullable { get; private set; }
-        public string DefaultValue { get; set; }
-
-        public string Declaration()
+        public string FieldDeclaration(string tableName)
         {
             string declaration = string.Format("[{0}] [{1}]{2} {3} {4}",
                 FieldName,
                 SqlDbType.ToString().ToLower(),
-                Arguments,
+                FieldArguments,
                 IsNullable ? "NULL" : "NOT NULL",
-                DefaultValue == null ? null : ("CONSTRAINT [DF_" + Root.TableName + "_" + FieldName + "]  DEFAULT " + DefaultValue));
+                DefaultFieldValue == null ? null : ("CONSTRAINT [DF_" + tableName + "_" + FieldName + "]  DEFAULT " + DefaultFieldValue));
 
             return declaration;
         }

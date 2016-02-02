@@ -120,7 +120,7 @@ namespace Tom
                 }
                 else if (value == null)
                 {
-                    param.Value = SqlMappings.NullValues[props[param.ParameterName].PropertyType]();
+                    param.Value = SqlMappings.EmptyValueFactories[props[param.ParameterName].PropertyType]();
                 }
                 else
                 {
