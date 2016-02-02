@@ -41,7 +41,7 @@
     <Compile Include="IRoot.cs" />
     <Compile Include="Sequel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="QueryDefinition.cs" />
+    <Compile Include="CommandDefinition.cs" />
     <Compile Include="SqlMappings.cs" />
     <Compile Include="TomBase.cs" />
     <Compile Include="Tools\SchemaGenie.cs" />

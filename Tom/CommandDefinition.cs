@@ -5,9 +5,9 @@ using System.Linq;
 
 namespace Tom
 {
-    internal class QueryDefinition
+    public class CommandDefinition
     {
-        public static QueryDefinition Create(object example)
+        public static CommandDefinition Create(object example)
         {
             if (example == null)
             {
@@ -16,13 +16,10 @@ namespace Tom
             else if (example is IDictionary<string, object>)
             {
                 var dict = example as IDictionary<string, object>;
-                var qd = new QueryDefinition
+                var qd = new CommandDefinition
                 {
                     Parameters = dict
-                        .Select(o => o.Value is SqlParameter ?
-                            CopySqlParameter(o.Value as SqlParameter) :
-                            new SqlParameter(o.Key, o.Value)
-                        )
+                        .Select(o => new SqlParameter(o.Key, o.Value))
                         .ToArray(),
                 };
                 qd.UpdateValues = qd.DictionaryParametersUpdater;
@@ -30,7 +27,7 @@ namespace Tom
             }
             else if (example is IEnumerable<SqlParameter>)
             {
-                var qd = new QueryDefinition
+                var qd = new CommandDefinition
                 {
                     Parameters = (example as IEnumerable<SqlParameter>)
                         .Select(param => CopySqlParameter(param))
@@ -41,17 +38,15 @@ namespace Tom
             }
             else
             {
-                var qd = new QueryDefinition
+                var qd = new CommandDefinition
                 {
                     Parameters = example.GetType().GetProperties()
                         .Select(o => new { o.Name, Type = o.PropertyType, Value = o.GetValue(example) })
-                        .Select(o => o.Value is SqlParameter ?
-                            CopySqlParameter(o.Value as SqlParameter) :
-                            new SqlParameter(o.Name, dbType: SqlMappings.SqlDbTypes[o.Type])
-                            {
-                                IsNullable = o.Type.IsGenericType && o.Type.GetGenericTypeDefinition() == typeof(Nullable<>),
-                            }
-                        )
+                        .Select(o => new SqlParameter(o.Name, SqlMappings.SqlDbTypes[o.Type])
+                        {
+                            IsNullable = o.Type.IsGenericType &&
+                                o.Type.GetGenericTypeDefinition() == typeof(Nullable<>),
+                        })
                         .ToArray(),
                 };
                 qd.UpdateValues = qd.ObjectParametersUpdater;
@@ -77,7 +72,7 @@ namespace Tom
         /// <summary>
         /// Use the static <see cref="Create(object)"/> method instead.
         /// </summary>
-        private QueryDefinition() { }
+        private CommandDefinition() { }
 
         public SqlParameter[] Parameters { get; private set; }
 

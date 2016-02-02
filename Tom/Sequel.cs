@@ -120,7 +120,7 @@ namespace Tom
             {
                 using (var cmd = connection.CreateCommand())
                 {
-                    QueryDefinition columnDefintion = QueryDefinition.Create(args.First());
+                    CommandDefinition columnDefintion = CommandDefinition.Create(args.First());
 
                     cmd.Transaction = tx;
                     cmd.CommandText = command;
