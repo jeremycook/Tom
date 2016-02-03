@@ -80,18 +80,47 @@ FETCH NEXT @ListAsyncPageSize ROWS ONLY";
 
         public static async Task<int> ExecuteAsync(this SqlConnection connection,
             string command,
-            IEnumerable<object> parameterModels = null,
             SqlTransaction transaction = null)
         {
-            if (parameterModels != null && parameterModels.Any())
+            var tx = transaction ?? connection.BeginTransaction();
+            try
             {
-                var tomCommand = new TomCommand(parameterModels.First().GetType());
-                return await tomCommand.ExecuteAsync(connection, command, parameterModels, transaction);
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.Transaction = tx;
+                    cmd.CommandText = command;
+
+                    int affectedRows = await cmd.ExecuteNonQueryAsync();
+                    if (transaction == null)
+                    {
+                        tx.Commit();
+                    }
+
+                    return affectedRows;
+                }
+            }
+            finally
+            {
+                if (transaction == null)
+                {
+                    tx.Dispose();
+                }
+            }
+        }
+
+        public static async Task<int> ExecuteAsync<TCommandModel>(this SqlConnection connection,
+            string command,
+            IEnumerable<TCommandModel> fieldModels = null,
+            SqlTransaction transaction = null)
+        {
+            if (fieldModels != null && fieldModels.Any())
+            {
+                var tomCommand = new Command<TCommandModel>();
+                return await tomCommand.ExecuteAsync(connection, command, fieldModels, transaction);
             }
             else
             {
-                var tomCommand = new TomCommand();
-                return await tomCommand.ExecuteAsync(connection, command, transaction);
+                return await connection.ExecuteAsync(command, transaction);
             }
         }
     }

@@ -9,6 +9,11 @@ namespace Tom
 {
     public class SqlMappings
     {
+        static SqlMappings()
+        {
+            IsNullable = type => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
+        }
+
         public static readonly Dictionary<Type, SqlDbType> SqlDbTypes = new Dictionary<Type, SqlDbType>
         {
             { typeof(Guid), SqlDbType.UniqueIdentifier },
@@ -144,5 +149,29 @@ namespace Tom
             { typeof(string), () => "" },
             { typeof(byte[]), () => DBNull.Value },
         };
+
+        /// <summary>
+        /// Method to check if a particular <see cref="Type"/> is nullable.
+        /// </summary>
+        public static Func<Type, bool> IsNullable { get; set; }
+
+        public static SqlDbType GetSqlDbTypes(Type type)
+        {
+            return SqlDbTypes.ContainsKey(type) ?
+                SqlDbTypes[type] :
+                SqlDbType.Variant;
+        }
+
+        public static Func<object> GetEmptyValueFactories(Type type)
+        {
+            return EmptyValueFactories.ContainsKey(type) ?
+                EmptyValueFactories[type] :
+                () => DBNull.Value;
+        }
+
+        public static bool IsMapped(Type type)
+        {
+            return SqlDbTypes.ContainsKey(type);
+        }
     }
 }

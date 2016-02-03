@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Tests.Models
 {
-    public class Foo
+    public class Secure
     {
         public Guid Id { get; set; }
 

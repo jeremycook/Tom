@@ -8,7 +8,7 @@ using Tom.Internal;
 
 namespace Tom
 {
-    public interface IRoot
+    public interface ITable
     {
         Type ModelType { get; }
         string TableName { get; }
@@ -16,9 +16,90 @@ namespace Tom
         IEnumerable<Column> PrimaryKey { get; }
     }
 
-    public class Root<TModel> : IRoot
+    public interface ITable<TModel> : ITable
     {
-        public Root(TomBase tom)
+        /// <summary>
+        /// Configure a <see cref="Column"/> and its <see cref="Field"/>.
+        /// </summary>
+        /// <param name="selector"></param>
+        /// <param name="columnAction"></param>
+        /// <returns></returns>
+        ITable<TModel> ConfigureColumn(Expression<Func<TModel, object>> selector, Action<Column> columnAction);
+
+        /// <summary>
+        /// Configure <see cref="ITable.Columns"/> with an optional <paramref name="filter"/> .
+        /// </summary>
+        /// <param name="columnAction"></param>
+        /// <param name="filter"></param>
+        /// <returns></returns>
+        ITable<TModel> ConfigureAllColumns(Action<Column> columnAction, Func<Column, bool> filter = null);
+
+        /// <summary>
+        /// List all models.
+        /// </summary>
+        /// <returns></returns>
+        Task<IEnumerable<TModel>> ListAsync();
+
+        /// <summary>
+        /// List a filtered set of models.
+        /// </summary>
+        /// <param name="filter"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        Task<IEnumerable<TModel>> ListAsync(string filter, object parameters);
+
+        /// <summary>
+        /// Add a <typeparamref name="TModel"/> within a transaction.
+        /// Call <see cref="TomBase.Commit"/> to save changes.
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        Task AddAsync(TModel model);
+
+        /// <summary>
+        /// Add a range of <typeparamref name="TModel"/> within a transaction.
+        /// Call <see cref="TomBase.Commit"/> to save changes.
+        /// </summary>
+        /// <param name="models"></param>
+        /// <returns></returns>
+        Task AddRangeAsync(IEnumerable<TModel> models);
+
+        /// <summary>
+        /// Update a <typeparamref name="TModel"/> within a transaction.
+        /// Call <see cref="TomBase.Commit"/> to save changes.
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        Task UpdateAsync(TModel model);
+
+        /// <summary>
+        /// Update a range of <typeparamref name="TModel"/> within a transaction.
+        /// Call <see cref="TomBase.Commit"/> to save changes.
+        /// </summary>
+        /// <param name="models"></param>
+        /// <returns></returns>
+        Task UpdateRangeAsync(IEnumerable<TModel> models);
+
+        /// <summary>
+        /// Remove a <typeparamref name="TModel"/> within a transaction.
+        /// Call <see cref="TomBase.Commit"/> to save changes.
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        Task RemoveAsync(TModel model);
+
+        /// <summary>
+        /// Remove a range of <typeparamref name="TModel"/> within a transaction.
+        /// Call <see cref="TomBase.Commit"/> to save changes.
+        /// </summary>
+        /// <param name="models"></param>
+        /// <returns></returns>
+        Task RemoveRangeAsync(IEnumerable<TModel> models);
+    }
+
+    public class Table<TModel> : ITable<TModel>
+    {
+        public Table(TomBase tom)
         {
             Tom = tom;
             ModelType = typeof(TModel);
@@ -26,24 +107,24 @@ namespace Tom
             Columns = ModelType.GetProperties()
                 .Select(p => new Column(p))
                 .ToArray();
-            Command = new TomCommand<TModel>(Columns);
+            Command = new Command<TModel>(Columns.Select(o => o.Field));
 
             var pk = Columns.First();
             PrimaryKey = new[] { pk };
-            if (pk.SqlDbType == System.Data.SqlDbType.UniqueIdentifier)
+            if (pk.Field.SqlDbType == System.Data.SqlDbType.UniqueIdentifier)
             {
                 pk.DefaultFieldValue = "(newid())";
             }
         }
 
-        public Root<TModel> ConfigureColumn(Expression<Func<TModel, object>> selector, Action<Column> columnAction)
+        public ITable<TModel> ConfigureColumn(Expression<Func<TModel, object>> selector, Action<Column> columnAction)
         {
             string name = selector.GetName();
-            columnAction(Columns.Single(o => o.FieldName == name));
+            columnAction(Columns.Single(o => o.Field.Name == name));
             return this;
         }
 
-        public Root<TModel> ConfigureAllColumns(Action<Column> columnAction, Func<Column, bool> filter = null)
+        public ITable<TModel> ConfigureAllColumns(Action<Column> columnAction, Func<Column, bool> filter = null)
         {
             foreach (var param in Columns.Where(filter ?? (c => true)))
             {
@@ -148,7 +229,7 @@ namespace Tom
         /// <returns></returns>
         public async Task UpdateRangeAsync(IEnumerable<TModel> models)
         {
-            var whereClause = string.Join(", ", PrimaryKey.Select(o => "[" + o.FieldName + "] = @" + o.FieldName));
+            var whereClause = string.Join(", ", PrimaryKey.Select(o => "[" + o.Field.Name + "] = @" + o.Field.Name));
 
             var work = await Tom.WorkAsync();
             await Command.ExecuteAsync(
@@ -183,7 +264,7 @@ namespace Tom
         /// <returns></returns>
         public async Task RemoveRangeAsync(IEnumerable<TModel> models)
         {
-            var whereClause = string.Join(", ", PrimaryKey.Select(o => "[" + o.FieldName + "] = @" + o.FieldName));
+            var whereClause = string.Join(", ", PrimaryKey.Select(o => "[" + o.Field.Name + "] = @" + o.Field.Name));
 
             var work = await Tom.WorkAsync();
             await Command.ExecuteAsync(
@@ -203,6 +284,6 @@ namespace Tom
         public string TableName { get; set; }
         public IEnumerable<Column> Columns { get; private set; }
         public IEnumerable<Column> PrimaryKey { get; set; }
-        public TomCommand<TModel> Command { get; private set; }
+        public Command<TModel> Command { get; private set; }
     }
 }

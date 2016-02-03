@@ -24,14 +24,23 @@ namespace Tom
         /// Create <see cref="Roots"/>.
         /// </summary>
         /// <returns></returns>
-        protected virtual IEnumerable<IRoot> CreateRoots()
+        protected virtual IEnumerable<ITable> CreateRoots()
         {
-            var roots = new List<IRoot>();
+            var roots = new List<ITable>();
             var rootProps = GetType().GetProperties()
-                .Where(p => typeof(IRoot).IsAssignableFrom(p.PropertyType));
+                .Where(p => typeof(ITable).IsAssignableFrom(p.PropertyType));
             foreach (var prop in rootProps)
             {
-                var root = Activator.CreateInstance(prop.PropertyType, args: new object[] { this }) as IRoot;
+                ITable root;
+                if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(ITable<>))
+                {
+                    Type concretePropertyType = typeof(Table<>).MakeGenericType(prop.PropertyType.GetGenericArguments()[0]);
+                    root = Activator.CreateInstance(concretePropertyType, args: new object[] { this }) as ITable;
+                }
+                else
+                {
+                    root = Activator.CreateInstance(prop.PropertyType, args: new object[] { this }) as ITable;
+                }
                 prop.SetValue(this, root);
                 roots.Add(root);
             }
@@ -48,7 +57,7 @@ namespace Tom
         }
 
         public string ConnectionString { get; private set; }
-        public IEnumerable<IRoot> Roots { get; private set; }
+        public IEnumerable<ITable> Roots { get; private set; }
         public Work Work { get; private set; }
 
         /// <summary>

@@ -13,11 +13,11 @@ namespace Tests.Models
 
         protected override void Configure()
         {
-            Secure.ConfigureAllColumns(c => c.Secure(), c => c.FieldName != "Id");
+            Secure.ConfigureAllColumns(c => c.Secure(), c => c.Field.Name != "Id");
         }
 
-        public Root<Foo> Foos { get; private set; }
-        public Root<Data> Data { get; private set; }
-        public Root<Secure> Secure { get; private set; }
+        public ITable<Foo> Foos { get; private set; }
+        public ITable<Data> Data { get; private set; }
+        public ITable<Secure> Secure { get; private set; }
     }
 }

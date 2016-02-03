@@ -30,7 +30,7 @@ namespace Tests
         [TestMethod]
         public async Task ExecuteInsertFoos()
         {
-            var cmd = new TomCommand<Foo>();
+            var cmd = new Command<Foo>();
 
             await cmd.ExecuteAsync(con, string.Format(
                     "insert into dbo.Foo ({0}) values ({1})",
@@ -49,8 +49,8 @@ namespace Tests
         [TestMethod]
         public async Task ExecuteInsertSecures()
         {
-            var cmd = new TomCommand<Secure>()
-                .ConfigureAllParameters(p => p.Secure(), p => p.FieldName != "Id");
+            var cmd = new Command<Secure>()
+                .ConfigureAllFields(f => f.Secure(), f => f.Name != "Id");
 
             await cmd.ExecuteAsync(con, string.Format(
                     "insert into dbo.Secure ({0}) values ({1})",
