@@ -12,10 +12,13 @@ namespace Tom
 {
     public class TomCommand
     {
-        private readonly TomParameter[] _Parameters;
-
         public static IEnumerable<TomParameter> CreateParameters(Type parameterModelType)
         {
+            if (parameterModelType == null)
+            {
+                throw new ArgumentNullException("parameterModelType");
+            }
+
             var props = parameterModelType.GetProperties();
             var parameters = new TomParameter[props.Length];
 
@@ -36,6 +39,12 @@ namespace Tom
 
             return parameters;
         }
+
+        private readonly TomParameter[] _Parameters;
+
+        public TomCommand()
+            : this(new TomParameter[0])
+        { }
 
         public TomCommand(Type parameterModelType)
             : this(CreateParameters(parameterModelType))
@@ -62,11 +71,39 @@ namespace Tom
             return this;
         }
 
+        public async Task<int> ExecuteAsync(SqlConnection connection, string command, SqlTransaction transaction = null)
+        {
+            var tx = transaction ?? connection.BeginTransaction();
+            try
+            {
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.Transaction = tx;
+                    cmd.CommandText = command;
+
+                    int affectedRows = await cmd.ExecuteNonQueryAsync();
+                    if (transaction == null)
+                    {
+                        tx.Commit();
+                    }
+
+                    return affectedRows;
+                }
+            }
+            finally
+            {
+                if (transaction == null)
+                {
+                    tx.Dispose();
+                }
+            }
+        }
+
         public async Task<int> ExecuteAsync(SqlConnection connection, string command, IEnumerable<object> parameterModels = null, SqlTransaction transaction = null)
         {
             if (parameterModels == null || !parameterModels.Any())
             {
-                return await connection.ExecuteAsync(command, transaction);
+                return await ExecuteAsync(connection, command, transaction);
             }
 
             var tx = transaction ?? connection.BeginTransaction();

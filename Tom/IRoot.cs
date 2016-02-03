@@ -62,10 +62,9 @@ namespace Tom
             {
                 await cx.OpenAsync();
 
-                var mappedColumns = Columns.Where(o => o.IsMapped).ToArray();
                 var results = await cx.ListAsync<TModel>(string.Format(
                     "select {0} from dbo.[{1}]",
-                    string.Join(", ", mappedColumns.Select(o => "[" + o.FieldName + "]")),
+                    Command.ToFieldNamesText(),
                     TableName
                 ));
 
@@ -85,10 +84,9 @@ namespace Tom
             {
                 await cx.OpenAsync();
 
-                var mappedColumns = Columns.Where(o => o.IsMapped).ToArray();
                 var results = await cx.ListAsync<TModel>(string.Format(
                         "select {0} from dbo.[{1}] where {2}",
-                        string.Join(", ", mappedColumns.Select(o => "[" + o.FieldName + "]")),
+                        Command.ToFieldNamesText(),
                         TableName,
                         filter
                     ),

@@ -34,28 +34,11 @@ namespace Tests
         }
 
         [TestMethod]
-        public async Task ExecuteWithDictionaries()
-        {
-            await sql.ExecuteAsync(
-                "insert into Foo (Guid, Int, DateTime2, DateTimeOffset, Nvarchar) values (@Guid, @Int, @DateTime2, @DateTimeOffset, @Nvarchar)",
-                Enumerable.Range(0, 1000).Select(i =>
-                    new Dictionary<string, object> {
-                        { "Guid", Guid.NewGuid() },
-                        { "Int", i },
-                        { "DateTime2", DateTime.UtcNow },
-                        { "DateTimeOffset", DateTimeOffset.Now },
-                        { "Nvarchar", "Dictionaried" },
-                    }
-                )
-            );
-        }
-
-        [TestMethod]
         public async Task ExecuteWithObjects()
         {
             await sql.ExecuteAsync(
                 "insert into Foo (Guid, Int, DateTime2, DateTimeOffset, Nvarchar) values (@Guid, @Int, @DateTime2, @DateTimeOffset, @Nvarchar)",
-                Enumerable.Range(1000, 1000).Select(i =>
+                Enumerable.Range(0, 1000).Select(i =>
                     new
                     {
                         Guid = Guid.NewGuid(),

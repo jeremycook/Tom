@@ -22,7 +22,7 @@ namespace Tests
             sql.ExecuteAsync("truncate table dbo.Foo").Wait();
             sql.ExecuteAsync(
                 "insert into Foo (Guid, Int, DateTime2, DateTimeOffset) values (@Guid, @Int, @DateTime2, @DateTimeOffset)",
-                Enumerable.Range(1000, 1000).Select(i =>
+                Enumerable.Range(0, 1000).Select(i =>
                     new
                     {
                         Guid = Guid.NewGuid(),
@@ -42,14 +42,40 @@ namespace Tests
         [TestMethod]
         public async Task List()
         {
-            await sql.ListAsync<Foo>("select Id, Int, Nvarchar from dbo.Foo");
+            var result = await sql.ListAsync<Foo>("select Id, Int, Nvarchar from dbo.Foo");
+
+            Assert.AreEqual(1000, result.Count);
+        }
+
+        [TestMethod]
+        public async Task ListFirstPage()
+        {
+            var result = await sql.ListAsync<Foo>(
+                "select Id, Int, Nvarchar from dbo.Foo order by Int",
+                page: 1);
+
+            Assert.AreEqual(25, result.Count);
         }
 
         [TestMethod]
         public async Task ListWithObjectFilter()
         {
-            await sql.ListAsync<Foo>("select Id, Int, Nvarchar from dbo.Foo where Nvarchar = @Nvarchar",
-               new { Nvarchar = "Needle" });
+            var result = await sql.ListAsync<Foo>(
+                "select Id, Int, Nvarchar from dbo.Foo where Int between @First and @last",
+                new { First = 500, Last = 599, NotUsed = Guid.Empty });
+
+            Assert.AreEqual(100, result.Count);
+        }
+
+        [TestMethod]
+        public async Task ListWithObjectFilterFirstPage()
+        {
+            var result = await sql.ListAsync<Foo>(
+                "select Id, Int, Nvarchar from dbo.Foo where Int between @First and @last order by Int",
+                new { First = 500, Last = 599, NotUsed = Guid.Empty },
+                page: 1);
+
+            Assert.AreEqual(25, result.Count);
         }
     }
 }

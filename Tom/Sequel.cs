@@ -2,149 +2,96 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Tom
 {
     public static class Sequel
     {
-        public static async Task<IEnumerable<TModel>> ListAsync<TModel>(this SqlConnection connection,
-            string command)
+        private static readonly Regex ParameterRegex = new Regex("@([A-Za-z0-9_]+)", RegexOptions.IgnoreCase);
+
+        public static async Task<IList<TModel>> ListAsync<TModel>(this SqlConnection connection,
+            string query,
+            object parameterModel = null,
+            int page = 0,
+            int pageSize = 25)
         {
-            using (var cmd = connection.CreateCommand())
-            {
-                cmd.CommandText = command;
-                var reader = await cmd.ExecuteReaderAsync();
+            string[] inUseParameters = GetInUseParameters(query);
 
-                var fields = Enumerable.Range(0, reader.FieldCount).Select(i => reader.GetName(i)).ToArray();
-                var map = typeof(TModel).GetProperties().ToDictionary(o => o.Name);
-
-                var results = new List<TModel>();
-                while (await reader.ReadAsync())
-                {
-                    var model = Activator.CreateInstance<TModel>();
-                    foreach (var field in fields)
-                    {
-                        object value = reader[field];
-                        map[field].SetValue(model, value == DBNull.Value ? null : value);
-                    }
-                    results.Add(model);
-                }
-                return results;
-            }
-        }
-
-        public static async Task<IEnumerable<TModel>> ListAsync<TModel>(this SqlConnection connection,
-            string command,
-            object parameters)
-        {
-            if (parameters == null)
-            {
-                throw new ArgumentNullException("parameters");
-            }
-
-            SqlParameter[] sqlparameters = parameters.GetType().GetProperties()
-                .Select(o => new SqlParameter(o.Name, value: o.GetValue(parameters)))
-                .ToArray();
+            SqlParameter[] sqlparameters = parameterModel == null ?
+                new SqlParameter[0] :
+                parameterModel.GetType().GetProperties()
+                    .Where(o => inUseParameters.Contains(o.Name, StringComparer.InvariantCultureIgnoreCase))
+                    .Select(o => new SqlParameter(o.Name, value: o.GetValue(parameterModel)))
+                    .ToArray();
 
             using (var cmd = connection.CreateCommand())
             {
-                cmd.CommandText = command;
+                cmd.CommandText = query;
                 cmd.Parameters.AddRange(sqlparameters);
-                var reader = await cmd.ExecuteReaderAsync();
-
-                var fields = Enumerable.Range(0, reader.FieldCount).Select(i => reader.GetName(i)).ToArray();
-                var props = typeof(TModel).GetProperties().ToDictionary(o => o.Name);
-
-                var results = new List<TModel>();
-                while (await reader.ReadAsync())
+                if (page > 0)
                 {
-                    var model = Activator.CreateInstance<TModel>();
-                    foreach (var name in fields)
+                    cmd.CommandText += @"
+OFFSET (@ListAsyncCurrentPage - 1) ROWS
+FETCH NEXT @ListAsyncPageSize ROWS ONLY";
+                    cmd.Parameters.AddRange(new[]
                     {
-                        object value = reader[name];
-                        props[name].SetValue(model, value == DBNull.Value ? null : value);
-                    }
-                    results.Add(model);
+                        new SqlParameter("ListAsyncCurrentPage", page),
+                        new SqlParameter("ListAsyncPageSize", pageSize),
+                    });
                 }
-                return results;
-            }
-        }
-
-        public static async Task<int> ExecuteAsync(this SqlConnection connection,
-            string command,
-            SqlTransaction transaction = null)
-        {
-            var tx = transaction ?? connection.BeginTransaction();
-            try
-            {
-                using (var cmd = connection.CreateCommand())
+                try
                 {
-                    cmd.Transaction = tx;
-                    cmd.CommandText = command;
-
-                    int affectedRows = await cmd.ExecuteNonQueryAsync();
-                    if (transaction == null)
+                    using (var reader = await cmd.ExecuteReaderAsync())
                     {
-                        tx.Commit();
-                    }
+                        var fields = Enumerable.Range(0, reader.FieldCount).Select(i => reader.GetName(i)).ToArray();
+                        var props = typeof(TModel).GetProperties().ToDictionary(o => o.Name);
 
-                    return affectedRows;
+                        var results = new List<TModel>();
+                        while (await reader.ReadAsync())
+                        {
+                            var model = Activator.CreateInstance<TModel>();
+                            foreach (var name in fields)
+                            {
+                                object value = reader[name];
+                                props[name].SetValue(model, value == DBNull.Value ? null : value);
+                            }
+                            results.Add(model);
+                        }
+                        return results;
+                    }
                 }
-            }
-            finally
-            {
-                if (transaction == null)
+                catch (SqlException ex)
                 {
-                    tx.Dispose();
+                    if (ex.Message.Contains("Invalid usage of the option NEXT in the FETCH statement."))
+                    {
+                        ex.Data.Add("PossiblyMissingOrderBy", "Paging results requires an ORDER BY statement.");
+                    }
+                    throw;
                 }
             }
         }
 
+        private static string[] GetInUseParameters(string query)
+        {
+            return ParameterRegex.Matches(query).Cast<Match>().Select(m => m.Groups[1].Value).ToArray();
+        }
+
         public static async Task<int> ExecuteAsync(this SqlConnection connection,
             string command,
-            IEnumerable<object> args,
+            IEnumerable<object> parameterModels = null,
             SqlTransaction transaction = null)
         {
-            if (args == null)
+            if (parameterModels != null && parameterModels.Any())
             {
-                throw new ArgumentNullException("args");
+                var tomCommand = new TomCommand(parameterModels.First().GetType());
+                return await tomCommand.ExecuteAsync(connection, command, parameterModels, transaction);
             }
-            if (!args.Any())
+            else
             {
-                return await connection.ExecuteAsync(command, transaction);
-            }
-
-            var tx = transaction ?? connection.BeginTransaction();
-            try
-            {
-                using (var cmd = connection.CreateCommand())
-                {
-                    CommandDefinition columnDefintion = CommandDefinition.Create(args.First());
-
-                    cmd.Transaction = tx;
-                    cmd.CommandText = command;
-                    cmd.Parameters.AddRange(columnDefintion.Parameters);
-
-                    int affectedRows = 0;
-                    foreach (var column in columnDefintion.With(args))
-                    {
-                        affectedRows += await cmd.ExecuteNonQueryAsync();
-                    }
-                    if (transaction == null)
-                    {
-                        tx.Commit();
-                    }
-
-                    return affectedRows;
-                }
-            }
-            finally
-            {
-                if (transaction == null)
-                {
-                    tx.Dispose();
-                }
+                var tomCommand = new TomCommand();
+                return await tomCommand.ExecuteAsync(connection, command, transaction);
             }
         }
     }
