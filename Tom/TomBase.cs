@@ -89,7 +89,7 @@ namespace Tom
         }
 
         /// <summary>
-        /// Dispose and nulls <see cref="Tom.Work"/> and connection if the
+        /// Dispose and nulls <see cref="Work"/> and connection if the
         /// connection is not null.
         /// </summary>
         public void Dispose()

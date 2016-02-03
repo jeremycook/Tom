@@ -185,14 +185,19 @@ namespace Tom
         /// <returns></returns>
         public async Task RemoveRangeAsync(IEnumerable<TModel> models)
         {
+            var whereClause = string.Join(", ", PrimaryKey.Select(o => "[" + o.FieldName + "] = @" + o.FieldName));
+
             var work = await Tom.WorkAsync();
-
-            string command = string.Format("delete from dbo.[{0}] where {1}",
-                TableName,
-                string.Join(", ", PrimaryKey.Select(o => "[" + o.FieldName + "] = @" + o.FieldName))
+            await Command.ExecuteAsync(
+                work.Connection,
+                string.Format(
+                    "delete from dbo.{0} where {1}",
+                    TableName,
+                    whereClause
+                ),
+                models,
+                work.Transaction
             );
-
-            await work.Connection.ExecuteAsync(command, args: models as IEnumerable<object>, transaction: work.Transaction);
         }
 
         public TomBase Tom { get; private set; }
