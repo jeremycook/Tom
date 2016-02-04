@@ -12,13 +12,13 @@ namespace Tom
         public Field(Type type, string name)
         {
             IsSecure = false;
-            IsMapped = SqlMappings.IsMapped(type);
+            IsMapped = Settings.Current.IsMapped(type);
             Type = type;
             Name = name;
-            IsNullable = SqlMappings.IsNullable(type);
-            SqlDbType = SqlMappings.GetSqlDbTypes(type);
-            EmptyValueFactory = SqlMappings.GetEmptyValueFactories(type);
-            GetDbValue = value => DefaultGetDbValue(this, value);
+            IsNullable = Settings.Current.IsNullable(type);
+            SqlDbType = Settings.Current.GetSqlDbTypes(type);
+            EmptyValueFactory = Settings.Current.GetEmptyValueFactories(type);
+            GetSqlParameterValue = value => DefaultGetSqlParameterValue(this, value);
         }
 
         /// <summary>
@@ -39,27 +39,36 @@ namespace Tom
         /// </summary>
         public virtual void Secure()
         {
-            SqlDbType = SqlMappings.GetSqlDbTypes(typeof(byte[]));
-            EmptyValueFactory = SqlMappings.GetEmptyValueFactories(typeof(byte[]));
+            SqlDbType = Settings.Current.GetSqlDbTypes(typeof(byte[]));
+            EmptyValueFactory = Settings.Current.GetEmptyValueFactories(typeof(byte[]));
             IsSecure = true;
         }
 
-        public Func<object, object> GetDbValue { get; set; }
+        public Func<object, object> GetSqlParameterValue { get; set; }
 
-        public static object DefaultGetDbValue(Field field, object value)
+        public static object DefaultGetSqlParameterValue(Field field, object value)
         {
-            if (value == null)
+            var parameterValue = value ?? field.EmptyValueFactory();
+
+            if (field.IsSecure)
             {
-                return field.EmptyValueFactory();
-            }
-            else if (field.IsSecure)
-            {
-                // TODO: Actually encrypt value.
-                return Encoding.UTF8.GetBytes(value.ToString());
+                if (parameterValue == DBNull.Value || parameterValue == null)
+                {
+                    return parameterValue;
+                }
+                else if (parameterValue is byte[])
+                {
+                    return Settings.Current.Encryptor.Encrypt(parameterValue as byte[]);
+                }
+                else
+                {
+                    byte[] clearBytes = Encoding.Unicode.GetBytes(parameterValue.ToString());
+                    return Settings.Current.Encryptor.Encrypt(clearBytes);
+                }
             }
             else
             {
-                return value;
+                return parameterValue;
             }
         }
 

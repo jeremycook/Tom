@@ -63,6 +63,7 @@
     <Compile Include="QueryTests.cs" />
     <Compile Include="TomTests.cs" />
     <Compile Include="TomCommandTests.cs" />
+    <Compile Include="Bootstrapper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

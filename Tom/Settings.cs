@@ -1,20 +1,44 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Tom.Internal;
 
 namespace Tom
 {
-    public class SqlMappings
+    public class Settings
     {
-        static SqlMappings()
+        private static Settings _Current;
+        public static Settings Current
         {
-            IsNullable = type => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
+            get
+            {
+                if (_Current == null)
+                {
+                    throw new NullReferenceException("Tom.Settings.Current is null and must be set.");
+                }
+                return _Current;
+            }
+            set { _Current = value; }
         }
 
-        public static readonly Dictionary<Type, SqlDbType> SqlDbTypes = new Dictionary<Type, SqlDbType>
+        internal SymmetricEncryption Encryptor { get; private set; }
+
+        /// <summary>
+        /// <see cref="Tom.Settings"/> constructor.
+        /// </summary>
+        /// <param name="encryptionKey">
+        /// Expected format is "0 255 0 ..." where each number is an 8-bit byte.
+        /// </param>
+        public Settings(string encryptionKey)
+        {
+            Encryptor = new SymmetricEncryption(encryptionKey);
+        }
+
+        public readonly Dictionary<Type, SqlDbType> SqlDbTypes = new Dictionary<Type, SqlDbType>
         {
             { typeof(Guid), SqlDbType.UniqueIdentifier },
             { typeof(Guid?), SqlDbType.UniqueIdentifier },
@@ -42,7 +66,7 @@ namespace Tom
             { typeof(byte[]), SqlDbType.VarBinary },
         };
 
-        public static readonly Dictionary<Type, string> FieldArguments = new Dictionary<Type, string>
+        public readonly Dictionary<Type, string> FieldArguments = new Dictionary<Type, string>
         {
             { typeof(Guid), null },
             { typeof(Guid?), null },
@@ -70,7 +94,7 @@ namespace Tom
             { typeof(byte[]), "(max)" },
         };
 
-        public static readonly Dictionary<Type, string> DefaultFieldValues = new Dictionary<Type, string>
+        public readonly Dictionary<Type, string> DefaultFieldValues = new Dictionary<Type, string>
         {
             { typeof(Guid), null },
             { typeof(Guid?), null },
@@ -98,7 +122,7 @@ namespace Tom
             { typeof(byte[]), null },
         };
 
-        public static readonly Dictionary<Type, string> NewDbValues = new Dictionary<Type, string>
+        public readonly Dictionary<Type, string> NewDbValues = new Dictionary<Type, string>
         {
             { typeof(Guid), "(newid())" },
             { typeof(Guid?), "(newid())" },
@@ -110,7 +134,7 @@ namespace Tom
             { typeof(DateTimeOffset?), "(sysdatetimeoffset())" },
         };
 
-        public static readonly Dictionary<Type, Func<object>> EmptyValueFactories = new Dictionary<Type, Func<object>>
+        public readonly Dictionary<Type, Func<object>> EmptyValueFactories = new Dictionary<Type, Func<object>>
         {
             { typeof(Guid), () => Guid.Empty },
             { typeof(Guid?), () => DBNull.Value },
@@ -130,7 +154,7 @@ namespace Tom
             { typeof(byte[]), () => DBNull.Value },
         };
 
-        public static readonly Dictionary<Type, Func<object>> NewValueFactories = new Dictionary<Type, Func<object>>
+        public readonly Dictionary<Type, Func<object>> NewValueFactories = new Dictionary<Type, Func<object>>
         {
             { typeof(Guid), () => Guid.NewGuid() },
             { typeof(Guid?), () => Guid.NewGuid() },
@@ -150,26 +174,26 @@ namespace Tom
             { typeof(byte[]), () => DBNull.Value },
         };
 
-        /// <summary>
-        /// Method to check if a particular <see cref="Type"/> is nullable.
-        /// </summary>
-        public static Func<Type, bool> IsNullable { get; set; }
+        public virtual bool IsNullable(Type type)
+        {
+            return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
+        }
 
-        public static SqlDbType GetSqlDbTypes(Type type)
+        public virtual SqlDbType GetSqlDbTypes(Type type)
         {
             return SqlDbTypes.ContainsKey(type) ?
                 SqlDbTypes[type] :
                 SqlDbType.Variant;
         }
 
-        public static Func<object> GetEmptyValueFactories(Type type)
+        public virtual Func<object> GetEmptyValueFactories(Type type)
         {
             return EmptyValueFactories.ContainsKey(type) ?
                 EmptyValueFactories[type] :
                 () => DBNull.Value;
         }
 
-        public static bool IsMapped(Type type)
+        public virtual bool IsMapped(Type type)
         {
             return SqlDbTypes.ContainsKey(type);
         }

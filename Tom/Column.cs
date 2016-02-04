@@ -1,6 +1,4 @@
-﻿using System;
-using System.Data;
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace Tom
 {
@@ -14,8 +12,8 @@ namespace Tom
             Field = new Field(prop.PropertyType, prop.Name);
             if (Field.IsMapped)
             {
-                FieldArguments = SqlMappings.FieldArguments[prop.PropertyType];
-                DefaultFieldValue = SqlMappings.DefaultFieldValues[prop.PropertyType];
+                FieldArguments = Settings.Current.FieldArguments[prop.PropertyType];
+                DefaultFieldValue = Settings.Current.DefaultFieldValues[prop.PropertyType];
             }
         }
 
@@ -28,8 +26,8 @@ namespace Tom
         /// </summary>
         public void Secure()
         {
-            FieldArguments = SqlMappings.FieldArguments[typeof(byte[])];
-            DefaultFieldValue = SqlMappings.DefaultFieldValues[typeof(byte[])];
+            FieldArguments = Settings.Current.FieldArguments[typeof(byte[])];
+            DefaultFieldValue = Settings.Current.DefaultFieldValues[typeof(byte[])];
             Field.Secure();
         }
     }

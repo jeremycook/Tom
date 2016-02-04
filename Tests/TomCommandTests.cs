@@ -1,11 +1,11 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Data.SqlClient;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Configuration;
-using Tom;
+using System.Data.SqlClient;
 using System.Linq;
-using Tests.Models;
 using System.Threading.Tasks;
+using Tests.Models;
+using Tom;
 
 namespace Tests
 {
@@ -20,6 +20,7 @@ namespace Tests
             con.Open();
 
             con.ExecuteAsync("truncate table dbo.Foo").Wait();
+            con.ExecuteAsync("truncate table dbo.Secure").Wait();
         }
 
         public void Dispose()
@@ -56,7 +57,7 @@ namespace Tests
                     "insert into dbo.Secure ({0}) values ({1})",
                     cmd.ToFieldNamesText(), cmd.ToParameterNamesText()
                 ),
-                Enumerable.Range(0, 1000).Select(i => new Secure
+                Enumerable.Range(0, 500).Select(i => new Secure
                 {
                     Id = Guid.NewGuid(),
                     Int = i,

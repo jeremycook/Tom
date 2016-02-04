@@ -42,8 +42,9 @@ namespace Tom
             var props = typeof(TCommandModel).GetProperties().ToDictionary(o => o.Name);
             foreach (var param in fieldParameters)
             {
-                var value = param.Field.GetDbValue(props[param.Field.Name].GetValue(commandModel));
-                param.SqlParameter.Value = value;
+                var value = props[param.Field.Name].GetValue(commandModel);
+                var sqlvalue = param.Field.GetSqlParameterValue(value);
+                param.SqlParameter.Value = sqlvalue;
             }
         }
     }
