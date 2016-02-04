@@ -18,6 +18,7 @@ namespace Tom
             IsNullable = Settings.Current.IsNullable(type);
             SqlDbType = Settings.Current.GetSqlDbTypes(type);
             EmptyValueFactory = Settings.Current.GetEmptyValueFactories(type);
+            GetObjectValue = value => DefaultGetObjectValue(this, value);
             GetSqlParameterValue = value => DefaultGetSqlParameterValue(this, value);
         }
 
@@ -40,15 +41,60 @@ namespace Tom
         public virtual void Secure()
         {
             SqlDbType = Settings.Current.GetSqlDbTypes(typeof(byte[]));
-            EmptyValueFactory = Settings.Current.GetEmptyValueFactories(typeof(byte[]));
             IsSecure = true;
         }
 
+        public Func<object, object> GetObjectValue { get; set; }
         public Func<object, object> GetSqlParameterValue { get; set; }
 
-        public static object DefaultGetSqlParameterValue(Field field, object value)
+        public static object DefaultGetObjectValue(Field field, object sqlvalue)
         {
-            var parameterValue = value ?? field.EmptyValueFactory();
+            var objectValue = sqlvalue == DBNull.Value ? null : sqlvalue;
+
+            if (field.IsSecure)
+            {
+                if (objectValue == null)
+                {
+                    return objectValue;
+                }
+                else
+                {
+                    var decryptedBytes = Settings.Current.Encryptor.Decrypt(objectValue as byte[]);
+                    if (field.Type == typeof(byte[]))
+                    {
+                        return decryptedBytes;
+                    }
+                    else if (decryptedBytes.Any())
+                    {
+                        string text = Encoding.Unicode.GetString(decryptedBytes);
+                        if (field.Type == typeof(Guid) || field.Type == typeof(Guid?))
+                        {
+                            return Guid.Parse(text);
+                        }
+                        else if (field.Type == typeof(DateTimeOffset) || field.Type == typeof(DateTimeOffset?))
+                        {
+                            return DateTimeOffset.Parse(text);
+                        }
+                        else
+                        {
+                            return Convert.ChangeType(text, field.Type);
+                        }
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+            }
+            else
+            {
+                return objectValue;
+            }
+        }
+
+        public static object DefaultGetSqlParameterValue(Field field, object objectValue)
+        {
+            var parameterValue = objectValue ?? field.EmptyValueFactory();
 
             if (field.IsSecure)
             {

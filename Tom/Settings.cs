@@ -11,6 +11,9 @@ namespace Tom
 {
     public class Settings
     {
+        public const int DefaultPage = 0;
+        public const int DefaultPageSize = 25;
+
         private static Settings _Current;
         public static Settings Current
         {

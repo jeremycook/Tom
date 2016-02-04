@@ -37,16 +37,22 @@ namespace Tom
         /// <summary>
         /// List all models.
         /// </summary>
+        /// <param name="orderBy"></param>
+        /// <param name="page"></param>
+        /// <param name="pageSize"></param>
         /// <returns></returns>
-        Task<IEnumerable<TModel>> ListAsync();
+        Task<IList<TModel>> ListAsync(string orderBy = null, int page = Settings.DefaultPage, int pageSize = Settings.DefaultPageSize);
 
         /// <summary>
         /// List a filtered set of models.
         /// </summary>
-        /// <param name="filter"></param>
+        /// <param name="where"></param>
         /// <param name="parameters"></param>
+        /// <param name="orderBy"></param>
+        /// <param name="page"></param>
+        /// <param name="pageSize"></param>
         /// <returns></returns>
-        Task<IEnumerable<TModel>> ListAsync(string filter, object parameters);
+        Task<IList<TModel>> ListAsync(string where, object parameters, string orderBy = null, int page = Settings.DefaultPage, int pageSize = Settings.DefaultPageSize);
 
         /// <summary>
         /// Add a <typeparamref name="TModel"/> within a transaction.
@@ -134,42 +140,55 @@ namespace Tom
         }
 
         /// <summary>
-        /// List all models.
+        /// List all <see cref="TModel"/>s.
         /// </summary>
+        /// <param name="orderBy"></param>
+        /// <param name="page"></param>
+        /// <param name="pageSize"></param>
         /// <returns></returns>
-        public async Task<IEnumerable<TModel>> ListAsync()
+        public async Task<IList<TModel>> ListAsync(string orderBy = null, int page = Settings.DefaultPage, int pageSize = Settings.DefaultPageSize)
         {
             using (var cx = new SqlConnection(Tom.ConnectionString))
             {
                 await cx.OpenAsync();
 
-                var results = await cx.ListAsync<TModel>(string.Format(
-                    "select {0} from dbo.[{1}]",
-                    Command.ToFieldNamesText(),
-                    TableName
-                ));
+                var results = await Command.ListAsync(cx,
+                    string.Format(
+                        "select {0} from dbo.[{1}] order by {2}",
+                        Command.ToFieldNamesText(),
+                        TableName,
+                        orderBy ?? string.Join(", ", PrimaryKey.Select(o => "[" + o.Field.Name + "]"))
+                    ),
+                    page: page,
+                    pageSize: pageSize
+                );
 
                 return results;
             };
         }
 
         /// <summary>
-        /// List a filtered set of models.
+        /// List a filtered set of <see cref="TModel"/>.
         /// </summary>
-        /// <param name="filter"></param>
+        /// <param name="where"></param>
         /// <param name="parameters"></param>
+        /// <param name="orderBy"></param>
+        /// <param name="page"></param>
+        /// <param name="pageSize"></param>
         /// <returns></returns>
-        public async Task<IEnumerable<TModel>> ListAsync(string filter, object parameters)
+        public async Task<IList<TModel>> ListAsync(string where, object parameters, string orderBy = null, int page = Settings.DefaultPage, int pageSize = Settings.DefaultPageSize)
         {
             using (var cx = new SqlConnection(Tom.ConnectionString))
             {
                 await cx.OpenAsync();
 
-                var results = await cx.ListAsync<TModel>(string.Format(
-                        "select {0} from dbo.[{1}] where {2}",
+                var results = await Command.ListAsync(cx,
+                    string.Format(
+                        "select {0} from dbo.[{1}] {2} order by {3}",
                         Command.ToFieldNamesText(),
                         TableName,
-                        filter
+                        "where " + where,
+                        orderBy ?? GetPrimaryKeySelect()
                     ),
                     parameters
                 );
@@ -177,7 +196,6 @@ namespace Tom
                 return results;
             };
         }
-
 
         /// <summary>
         /// Add a <typeparamref name="TModel"/> within a transaction.
@@ -229,8 +247,6 @@ namespace Tom
         /// <returns></returns>
         public async Task UpdateRangeAsync(IEnumerable<TModel> models)
         {
-            var whereClause = string.Join(", ", PrimaryKey.Select(o => "[" + o.Field.Name + "] = @" + o.Field.Name));
-
             var work = await Tom.WorkAsync();
             await Command.ExecuteAsync(
                 work.Connection,
@@ -238,7 +254,7 @@ namespace Tom
                     "update dbo.{0} set {1} where {2}",
                     TableName,
                     Command.ToUpdateFieldsText(),
-                    whereClause
+                    GetPrimaryKeyFilter()
                 ),
                 models,
                 work.Transaction
@@ -264,19 +280,27 @@ namespace Tom
         /// <returns></returns>
         public async Task RemoveRangeAsync(IEnumerable<TModel> models)
         {
-            var whereClause = string.Join(", ", PrimaryKey.Select(o => "[" + o.Field.Name + "] = @" + o.Field.Name));
-
             var work = await Tom.WorkAsync();
             await Command.ExecuteAsync(
                 work.Connection,
                 string.Format(
                     "delete from dbo.{0} where {1}",
                     TableName,
-                    whereClause
+                    GetPrimaryKeyFilter()
                 ),
                 models,
                 work.Transaction
             );
+        }
+
+        private string GetPrimaryKeyFilter()
+        {
+            return string.Join(", ", PrimaryKey.Select(o => "[" + o.Field.Name + "] = @" + o.Field.Name));
+        }
+
+        private string GetPrimaryKeySelect()
+        {
+            return string.Join(", ", PrimaryKey.Select(o => "[" + o.Field.Name + "]"));
         }
 
         public TomBase Tom { get; private set; }

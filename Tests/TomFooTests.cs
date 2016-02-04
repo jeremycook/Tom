@@ -9,11 +9,11 @@ using Tom;
 namespace Tests
 {
     [TestClass]
-    public class TomTests : IDisposable
+    public class TomFooTests : IDisposable
     {
         private readonly Db db;
 
-        public TomTests()
+        public TomFooTests()
         {
             db = new Db("Db");
 
@@ -21,7 +21,6 @@ namespace Tests
             {
                 cx.Open();
                 cx.ExecuteAsync("truncate table dbo.Foo").Wait();
-                cx.ExecuteAsync("truncate table dbo.Secure").Wait();
             }
         }
 
@@ -34,7 +33,7 @@ namespace Tests
         [TestMethod]
         public async Task ListAllFoos()
         {
-            await db.Foos.AddRangeAsync(Enumerable.Range(0, 1000).Select(i => new Foo
+            await db.Foos.AddRangeAsync(Enumerable.Range(0, 500).Select(i => new Foo
             {
                 Id = Guid.NewGuid(),
                 Int = i,
@@ -47,7 +46,7 @@ namespace Tests
         [TestMethod]
         public async Task ListFilteredFoos()
         {
-            await db.Foos.AddRangeAsync(Enumerable.Range(0, 1000).Select(i => new Foo
+            await db.Foos.AddRangeAsync(Enumerable.Range(0, 500).Select(i => new Foo
             {
                 Id = Guid.NewGuid(),
                 Int = i,
@@ -76,23 +75,10 @@ namespace Tests
         [TestMethod]
         public async Task AddRangeFoo()
         {
-            await db.Foos.AddRangeAsync(Enumerable.Range(0, 1000).Select(i => new Foo
+            await db.Foos.AddRangeAsync(Enumerable.Range(0, 500).Select(i => new Foo
             {
                 Id = Guid.NewGuid(),
             }));
-            db.Commit();
-        }
-
-
-        [TestMethod]
-        public async Task AddSecure()
-        {
-            var secure = new Secure
-            {
-                Id = Guid.NewGuid(),
-                Nvarchar = "Encrypt Me",
-            };
-            await db.Secure.AddAsync(secure);
             db.Commit();
         }
 
@@ -116,7 +102,7 @@ namespace Tests
         [TestMethod]
         public async Task UpdateRangeFoo()
         {
-            var foos = Enumerable.Range(0, 1000).Select(i => new Foo
+            var foos = Enumerable.Range(0, 500).Select(i => new Foo
             {
                 Id = Guid.NewGuid(),
                 Nvarchar = "Created",
@@ -151,7 +137,7 @@ namespace Tests
         [TestMethod]
         public async Task RemoveRangeFoo()
         {
-            var foos = Enumerable.Range(0, 1000).Select(i => new Foo
+            var foos = Enumerable.Range(0, 500).Select(i => new Foo
             {
                 Id = Guid.NewGuid(),
             }).ToList();

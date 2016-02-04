@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Tom.Internal;
 
@@ -118,6 +119,68 @@ namespace Tom
             }
         }
 
+        public async Task<IList<TCommandModel>> ListAsync(SqlConnection connection,
+            string query,
+            object parameterModel = null,
+            int page = Settings.DefaultPage,
+            int pageSize = Settings.DefaultPageSize)
+        {
+            string[] inUseParameters = GetInUseParameters(query);
+
+            SqlParameter[] sqlparameters = parameterModel == null ?
+                new SqlParameter[0] :
+                parameterModel.GetType().GetProperties()
+                    .Where(o => inUseParameters.Contains(o.Name, StringComparer.InvariantCultureIgnoreCase))
+                    .Select(o => new SqlParameter(o.Name, value: o.GetValue(parameterModel)))
+                    .ToArray();
+
+            using (var cmd = connection.CreateCommand())
+            {
+                cmd.CommandText = query;
+                cmd.Parameters.AddRange(sqlparameters);
+                if (page > 0)
+                {
+                    cmd.CommandText += @"
+OFFSET (@ListAsyncCurrentPage - 1) ROWS
+FETCH NEXT @ListAsyncPageSize ROWS ONLY";
+                    cmd.Parameters.AddRange(new[]
+                    {
+                        new SqlParameter("ListAsyncCurrentPage", page),
+                        new SqlParameter("ListAsyncPageSize", pageSize),
+                    });
+                }
+                try
+                {
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        var results = new List<TCommandModel>();
+                        while (await reader.ReadAsync())
+                        {
+                            var props = typeof(TCommandModel).GetProperties().ToDictionary(o => o.Name);
+
+                            var model = Activator.CreateInstance<TCommandModel>();
+                            foreach (var field in Fields)
+                            {
+                                object sqlvalue = reader[field.Name];
+                                object value = field.GetObjectValue(sqlvalue);
+                                props[field.Name].SetValue(model, value);
+                            }
+                            results.Add(model);
+                        }
+                        return results;
+                    }
+                }
+                catch (SqlException ex)
+                {
+                    if (ex.Message.Contains("Invalid usage of the option NEXT in the FETCH statement."))
+                    {
+                        ex.Data.Add("PossiblyMissingOrderBy", "Paging results requires an ORDER BY statement.");
+                    }
+                    throw;
+                }
+            }
+        }
+
         /// <summary>
         /// Returns mapped fields. See <see cref="UnmappedFields"/> for
         /// unmapped fields.
@@ -185,6 +248,13 @@ namespace Tom
         public string ToUpdateFieldsText()
         {
             return string.Join(", ", Fields.Select(o => "[" + o.Name + "] = @" + o.Name));
+        }
+
+        private static readonly Regex ParameterRegex = new Regex("@([A-Za-z0-9_]+)", RegexOptions.IgnoreCase);
+
+        private static string[] GetInUseParameters(string query)
+        {
+            return ParameterRegex.Matches(query).Cast<Match>().Select(m => m.Groups[1].Value).ToArray();
         }
     }
 }
