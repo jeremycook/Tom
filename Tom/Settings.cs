@@ -28,7 +28,7 @@ namespace Tom
             set { _Current = value; }
         }
 
-        internal SymmetricEncryption Encryptor { get; private set; }
+        public SymmetricEncryption Encryptor { get; private set; }
 
         /// <summary>
         /// <see cref="Tom.Settings"/> constructor.
@@ -41,88 +41,41 @@ namespace Tom
             Encryptor = new SymmetricEncryption(encryptionKey);
         }
 
-        public readonly Dictionary<Type, SqlDbType> SqlDbTypes = new Dictionary<Type, SqlDbType>
+        public virtual FieldSettings GetFieldSettings(Type type)
         {
-            { typeof(Guid), SqlDbType.UniqueIdentifier },
-            { typeof(Guid?), SqlDbType.UniqueIdentifier },
+            return FieldSettings.ContainsKey(type) ?
+                FieldSettings[type] :
+                FieldSettings[typeof(object)];
+        }
 
-            { typeof(int), SqlDbType.Int },
-            { typeof(int?), SqlDbType.Int },
-
-            { typeof(decimal), SqlDbType.Decimal },
-            { typeof(decimal?), SqlDbType.Decimal },
-
-            { typeof(double), SqlDbType.Float },
-            { typeof(double?), SqlDbType.Float },
-
-            { typeof(DateTime), SqlDbType.DateTime2 },
-            { typeof(DateTime?), SqlDbType.DateTime2 },
-
-            { typeof(DateTimeOffset), SqlDbType.DateTimeOffset },
-            { typeof(DateTimeOffset?), SqlDbType.DateTimeOffset },
-
-            { typeof(bool), SqlDbType.Bit },
-            { typeof(bool?), SqlDbType.Bit },
-
-            { typeof(string), SqlDbType.NVarChar },
-
-            { typeof(byte[]), SqlDbType.VarBinary },
-        };
-
-        public readonly Dictionary<Type, string> FieldArguments = new Dictionary<Type, string>
+        public readonly Dictionary<Type, FieldSettings> FieldSettings = new Dictionary<Type, FieldSettings>
         {
-            { typeof(Guid), null },
-            { typeof(Guid?), null },
+            { typeof(Guid), new FieldSettings { SqlDbType = SqlDbType.UniqueIdentifier, IsNullable = false, EmptyValueFactory = () => Guid.Empty } },
+            { typeof(Guid?), new FieldSettings { SqlDbType = SqlDbType.UniqueIdentifier, IsNullable = true } },
 
-            { typeof(int), null },
-            { typeof(int?), null },
+            { typeof(int), new FieldSettings { SqlDbType = SqlDbType.Int, IsNullable = false, FieldDefault = "(0)", EmptyValueFactory = () => 0 } },
+            { typeof(int?), new FieldSettings { SqlDbType = SqlDbType.Int, IsNullable = true } },
 
-            { typeof(decimal), "(18, 0)" },
-            { typeof(decimal?), "(18, 0)" },
+            { typeof(decimal), new FieldSettings { SqlDbType = SqlDbType.Decimal, IsNullable = false, FieldArguments = "(18, 0)", FieldDefault = "(0)", EmptyValueFactory = () => 0m } },
+            { typeof(decimal?), new FieldSettings { SqlDbType = SqlDbType.Decimal, IsNullable = true, FieldArguments = "(18, 0)" } },
 
-            { typeof(double), null },
-            { typeof(double?), null },
+            { typeof(double), new FieldSettings { SqlDbType = SqlDbType.Float, IsNullable = false, FieldDefault = "(0)", EmptyValueFactory = () => 0d } },
+            { typeof(double?), new FieldSettings { SqlDbType = SqlDbType.Float, IsNullable = true } },
 
-            { typeof(DateTime), "(7)" },
-            { typeof(DateTime?), "(7)" },
+            { typeof(DateTime), new FieldSettings { SqlDbType = SqlDbType.DateTime2, IsNullable = false, FieldArguments = "(7)", EmptyValueFactory = () => DateTime.MinValue } },
+            { typeof(DateTime?), new FieldSettings { SqlDbType = SqlDbType.DateTime2, IsNullable = true, FieldArguments = "(7)" } },
 
-            { typeof(DateTimeOffset), "(7)" },
-            { typeof(DateTimeOffset?), "(7)" },
+            { typeof(DateTimeOffset), new FieldSettings { SqlDbType = SqlDbType.DateTimeOffset, IsNullable = false, FieldArguments = "(7)", EmptyValueFactory = () => DateTimeOffset.MinValue } },
+            { typeof(DateTimeOffset?), new FieldSettings { SqlDbType = SqlDbType.DateTimeOffset, IsNullable = true, FieldArguments = "(7)" } },
 
-            { typeof(bool), null },
-            { typeof(bool?), null },
+            { typeof(bool), new FieldSettings { SqlDbType = SqlDbType.Bit, IsNullable = false, FieldDefault = "(0)", EmptyValueFactory = () => false } },
+            { typeof(bool?), new FieldSettings { SqlDbType = SqlDbType.Bit, IsNullable = true } },
 
-            { typeof(string), "(100)" },
+            { typeof(string), new FieldSettings { SqlDbType = SqlDbType.NVarChar, IsNullable = false, FieldArguments = "(100)", FieldDefault = "('')", EmptyValueFactory = () => "" } },
 
-            { typeof(byte[]), "(max)" },
-        };
+            { typeof(byte[]), new FieldSettings { SqlDbType = SqlDbType.VarBinary, IsNullable = false, FieldArguments = "(max)" } },
 
-        public readonly Dictionary<Type, string> DefaultFieldValues = new Dictionary<Type, string>
-        {
-            { typeof(Guid), null },
-            { typeof(Guid?), null },
-
-            { typeof(int), "(0)" },
-            { typeof(int?), null },
-
-            { typeof(decimal), "(0)" },
-            { typeof(decimal?), null },
-
-            { typeof(double), "(0)" },
-            { typeof(double?), null },
-
-            { typeof(DateTime), null },
-            { typeof(DateTime?), null },
-
-            { typeof(DateTimeOffset), null },
-            { typeof(DateTimeOffset?), null },
-
-            { typeof(bool), "(0)" },
-            { typeof(bool?), null },
-
-            { typeof(string), "('')" },
-
-            { typeof(byte[]), null },
+            { typeof(object), new FieldSettings { SqlDbType = SqlDbType.NVarChar, IsNullable = true, FieldArguments = "(max)", IsSerialized = true } },
         };
 
         public readonly Dictionary<Type, string> NewDbValues = new Dictionary<Type, string>
@@ -136,69 +89,23 @@ namespace Tom
             { typeof(DateTimeOffset), "(sysdatetimeoffset())" },
             { typeof(DateTimeOffset?), "(sysdatetimeoffset())" },
         };
+    }
 
-        public readonly Dictionary<Type, Func<object>> EmptyValueFactories = new Dictionary<Type, Func<object>>
+    public class FieldSettings
+    {
+        public FieldSettings()
         {
-            { typeof(Guid), () => Guid.Empty },
-            { typeof(Guid?), () => DBNull.Value },
-            { typeof(int), () => 0 },
-            { typeof(int?), () => DBNull.Value },
-            { typeof(decimal), () => 0m },
-            { typeof(decimal?), () => DBNull.Value },
-            { typeof(double), () => 0d },
-            { typeof(double?), () => DBNull.Value },
-            { typeof(DateTime), () => DateTime.MinValue },
-            { typeof(DateTime?), () => DBNull.Value },
-            { typeof(DateTimeOffset), () => DateTimeOffset.MinValue },
-            { typeof(DateTimeOffset?), () => DBNull.Value },
-            { typeof(bool), () => false },
-            { typeof(bool?), () => DBNull.Value },
-            { typeof(string), () => "" },
-            { typeof(byte[]), () => DBNull.Value },
-        };
-
-        public readonly Dictionary<Type, Func<object>> NewValueFactories = new Dictionary<Type, Func<object>>
-        {
-            { typeof(Guid), () => Guid.NewGuid() },
-            { typeof(Guid?), () => Guid.NewGuid() },
-            { typeof(int), () => 0 },
-            { typeof(int?), () => 0 },
-            { typeof(decimal), () => 0m },
-            { typeof(decimal?), () => 0m },
-            { typeof(double), () => 0d },
-            { typeof(double?), () => 0d },
-            { typeof(DateTime), () => DateTime.UtcNow },
-            { typeof(DateTime?), () => DateTime.UtcNow },
-            { typeof(DateTimeOffset), () => DateTimeOffset.Now },
-            { typeof(DateTimeOffset?), () => DateTimeOffset.Now },
-            { typeof(bool), () => false },
-            { typeof(bool?), () => false },
-            { typeof(string), () => "" },
-            { typeof(byte[]), () => DBNull.Value },
-        };
-
-        public virtual bool IsNullable(Type type)
-        {
-            return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
+            IsMapped = true;
+            EmptyValueFactory = () => null;
         }
 
-        public virtual SqlDbType GetSqlDbTypes(Type type)
-        {
-            return SqlDbTypes.ContainsKey(type) ?
-                SqlDbTypes[type] :
-                SqlDbType.Variant;
-        }
+        public string FieldArguments { get; set; }
+        public string FieldDefault { get; set; }
 
-        public virtual Func<object> GetEmptyValueFactories(Type type)
-        {
-            return EmptyValueFactories.ContainsKey(type) ?
-                EmptyValueFactories[type] :
-                () => DBNull.Value;
-        }
-
-        public virtual bool IsMapped(Type type)
-        {
-            return SqlDbTypes.ContainsKey(type);
-        }
+        public bool IsMapped { get; set; }
+        public bool IsSerialized { get; set; }
+        public bool IsNullable { get; set; }
+        public SqlDbType SqlDbType { get; set; }
+        public Func<object> EmptyValueFactory { get; set; }
     }
 }

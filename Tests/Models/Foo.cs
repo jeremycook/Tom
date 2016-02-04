@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -32,5 +33,20 @@ namespace Tests.Models
         public bool? BitNull { get; set; }
 
         public string Nvarchar { get; set; }
+
+        public Fi Fi { get; set; }
+        public IEnumerable<Fee> Fees { get; set; }
+    }
+
+    public class Fi
+    {
+        public string Name { get; set; }
+        public int Number { get; set; }
+    }
+
+    public class Fee
+    {
+        public string Name { get; set; }
+        public int Number { get; set; }
     }
 }

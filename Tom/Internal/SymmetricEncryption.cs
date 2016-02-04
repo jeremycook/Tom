@@ -8,7 +8,7 @@ namespace Tom.Internal
     /// <summary>
     /// Symmetric data encryption and decryption using <see cref="AesCryptoServiceProvider"/>.
     /// </summary>
-    internal class SymmetricEncryption
+    public class SymmetricEncryption
     {
         /// <summary>
         /// Keys can be 16, 24, or 32 bytes long.
@@ -48,7 +48,7 @@ namespace Tom.Internal
         /// Expected format is "0 255 0 ..."
         /// </param>
         public SymmetricEncryption(string key)
-            : this(key.Split(' ').Select(k => Convert.ToByte(k)).ToArray())
+            : this(key.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(k => Convert.ToByte(k)).ToArray())
         { }
 
         /// <summary>

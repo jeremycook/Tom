@@ -211,7 +211,7 @@ FETCH NEXT @ListAsyncPageSize ROWS ONLY";
         /// <param name="fieldSelector"></param>
         /// <param name="parameterAction"></param>
         /// <returns></returns>
-        public Command<TCommandModel> ConfigureFields(
+        public Command<TCommandModel> ConfigureField(
             Expression<Func<TCommandModel, object>> fieldSelector,
             Action<Field> parameterAction)
         {

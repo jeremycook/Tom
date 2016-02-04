@@ -1,6 +1,10 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,13 +15,15 @@ namespace Tom
     {
         public Field(Type type, string name)
         {
+            var fieldSettings = Settings.Current.GetFieldSettings(type);
             IsSecure = false;
-            IsMapped = Settings.Current.IsMapped(type);
+            IsMapped = fieldSettings.IsMapped;
+            IsSerialized = fieldSettings.IsSerialized;
             Type = type;
             Name = name;
-            IsNullable = Settings.Current.IsNullable(type);
-            SqlDbType = Settings.Current.GetSqlDbTypes(type);
-            EmptyValueFactory = Settings.Current.GetEmptyValueFactories(type);
+            IsNullable = fieldSettings.IsNullable;
+            SqlDbType = fieldSettings.SqlDbType;
+            EmptyValueFactory = fieldSettings.EmptyValueFactory;
             GetObjectValue = value => DefaultGetObjectValue(this, value);
             GetSqlParameterValue = value => DefaultGetSqlParameterValue(this, value);
         }
@@ -40,82 +46,135 @@ namespace Tom
         /// </summary>
         public virtual void Secure()
         {
-            SqlDbType = Settings.Current.GetSqlDbTypes(typeof(byte[]));
+            SqlDbType = Settings.Current.GetFieldSettings(typeof(byte[])).SqlDbType;
             IsSecure = true;
         }
 
         public Func<object, object> GetObjectValue { get; set; }
         public Func<object, object> GetSqlParameterValue { get; set; }
+        public bool IsSerialized { get; private set; }
 
         public static object DefaultGetObjectValue(Field field, object sqlvalue)
         {
             var objectValue = sqlvalue == DBNull.Value ? null : sqlvalue;
 
-            if (field.IsSecure)
+            if (field.IsSecure && objectValue != null)
             {
-                if (objectValue == null)
+                var decryptedBytes = Settings.Current.Encryptor.Decrypt(objectValue as byte[]);
+                if (field.IsSerialized)
                 {
-                    return objectValue;
+                    objectValue = decryptedBytes;
+                }
+                else if (field.Type == typeof(byte[]))
+                {
+                    objectValue = decryptedBytes;
+                }
+                else if (field.Type == typeof(DateTime) || field.Type == typeof(DateTime?))
+                {
+                    var ticks = BitConverter.ToInt64(decryptedBytes, 0);
+                    objectValue = new DateTime(ticks);
                 }
                 else
                 {
-                    var decryptedBytes = Settings.Current.Encryptor.Decrypt(objectValue as byte[]);
-                    if (field.Type == typeof(byte[]))
+                    string text = Encoding.UTF8.GetString(decryptedBytes);
+
+                    if (field.Type == typeof(Guid) || field.Type == typeof(Guid?))
                     {
-                        return decryptedBytes;
+                        objectValue = Guid.Parse(text);
                     }
-                    else if (decryptedBytes.Any())
+                    else if (field.Type == typeof(DateTimeOffset) || field.Type == typeof(DateTimeOffset?))
                     {
-                        string text = Encoding.Unicode.GetString(decryptedBytes);
-                        if (field.Type == typeof(Guid) || field.Type == typeof(Guid?))
-                        {
-                            return Guid.Parse(text);
-                        }
-                        else if (field.Type == typeof(DateTimeOffset) || field.Type == typeof(DateTimeOffset?))
-                        {
-                            return DateTimeOffset.Parse(text);
-                        }
-                        else
-                        {
-                            return Convert.ChangeType(text, field.Type);
-                        }
+                        objectValue = DateTimeOffset.Parse(text);
+                    }
+                    else if (field.Type.IsGenericType && field.Type.GetGenericTypeDefinition() == typeof(Nullable<>))
+                    {
+                        objectValue = Convert.ChangeType(text, field.Type.GetGenericArguments()[0]);
                     }
                     else
                     {
-                        return null;
+                        objectValue = Convert.ChangeType(text, field.Type);
                     }
                 }
             }
-            else
+
+            if (field.IsSerialized && objectValue != null)
             {
-                return objectValue;
+                switch (field.SqlDbType)
+                {
+                    case SqlDbType.NVarChar:
+                        objectValue = JsonConvert.DeserializeObject((string)objectValue, field.Type);
+                        break;
+                    case SqlDbType.VarBinary:
+                        byte[] data = (byte[])objectValue;
+                        using (MemoryStream ms = new MemoryStream(data))
+                        using (var reader = new BsonReader(ms))
+                        {
+                            reader.ReadRootValueAsArray =
+                                typeof(IEnumerable).IsAssignableFrom(field.Type) &&
+                                !typeof(IDictionary).IsAssignableFrom(field.Type) &&
+                                field.Type != typeof(string);
+
+                            JsonSerializer jsonSerializer = JsonSerializer.CreateDefault();
+                            objectValue = jsonSerializer.Deserialize(reader, field.Type);
+                        }
+                        break;
+                    default:
+                        throw new InvalidOperationException(string.Format("Cannot deserialize from SqlDbType.{0}. Only NVarChar and VarBinary are supported.", field.SqlDbType));
+                }
             }
+
+            return objectValue;
         }
 
         public static object DefaultGetSqlParameterValue(Field field, object objectValue)
         {
-            var parameterValue = objectValue ?? field.EmptyValueFactory();
+            object parameterValue = objectValue ?? field.EmptyValueFactory();
 
-            if (field.IsSecure)
+            if (field.IsSerialized && parameterValue != null)
             {
-                if (parameterValue == DBNull.Value || parameterValue == null)
+                switch (field.SqlDbType)
                 {
-                    return parameterValue;
+                    case SqlDbType.NVarChar:
+                        parameterValue = JsonConvert.SerializeObject(parameterValue);
+                        break;
+                    case SqlDbType.VarBinary:
+                        using (MemoryStream ms = new MemoryStream())
+                        using (BsonWriter writer = new BsonWriter(ms))
+                        {
+                            JsonSerializer jsonSerializer = JsonSerializer.CreateDefault();
+                            jsonSerializer.Serialize(writer, parameterValue);
+                            parameterValue = ms.ToArray();
+                        }
+                        break;
+                    default:
+                        throw new InvalidOperationException(string.Format("Cannot serialize to SqlDbType.{0}. Only NVarChar abd VarBinary are supported.", field.SqlDbType));
                 }
-                else if (parameterValue is byte[])
+            }
+
+            if (field.IsSecure && parameterValue != null)
+            {
+                if (parameterValue is byte[])
                 {
-                    return Settings.Current.Encryptor.Encrypt(parameterValue as byte[]);
+                    parameterValue = Settings.Current.Encryptor.Encrypt((byte[])parameterValue);
+                }
+                else if (parameterValue is DateTime?)
+                {
+                    byte[] clearBytes = BitConverter.GetBytes(((DateTime?)parameterValue).Value.Ticks);
+                    parameterValue = Settings.Current.Encryptor.Encrypt(clearBytes);
+                }
+                else if (parameterValue is DateTimeOffset?)
+                {
+                    byte[] clearBytes = Encoding.UTF8.GetBytes(((DateTimeOffset?)parameterValue).Value.ToString("O"));
+                    parameterValue = Settings.Current.Encryptor.Encrypt(clearBytes);
                 }
                 else
                 {
-                    byte[] clearBytes = Encoding.Unicode.GetBytes(parameterValue.ToString());
-                    return Settings.Current.Encryptor.Encrypt(clearBytes);
+                    byte[] clearBytes = Encoding.UTF8.GetBytes(parameterValue.ToString());
+                    parameterValue = Settings.Current.Encryptor.Encrypt(clearBytes);
                 }
             }
-            else
-            {
-                return parameterValue;
-            }
+
+            return parameterValue ?? DBNull.Value;
         }
 
         public static IEnumerable<Field> CreateFieldsFromType(Type modelType)

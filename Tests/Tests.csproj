@@ -35,6 +35,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.8.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
@@ -54,6 +58,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="CommandFooTests.cs" />
     <Compile Include="ExecuteTests.cs" />
     <Compile Include="Models\Data.cs" />
     <Compile Include="Models\Db.cs" />
@@ -63,11 +68,12 @@
     <Compile Include="QueryTests.cs" />
     <Compile Include="TomSecureTests.cs" />
     <Compile Include="TomFooTests.cs" />
-    <Compile Include="CommandTests.cs" />
+    <Compile Include="CommandSecureTests.cs" />
     <Compile Include="Bootstrapper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Tom\Tom.csproj">

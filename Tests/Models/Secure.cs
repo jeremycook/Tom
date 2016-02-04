@@ -32,5 +32,20 @@ namespace Tests.Models
         public bool? BitNull { get; set; }
 
         public string Nvarchar { get; set; }
+
+        public SecureFi Fi { get; set; }
+        public IEnumerable<SecureFee> Fees { get; set; }
+    }
+
+    public class SecureFi
+    {
+        public string Name { get; set; }
+        public int Number { get; set; }
+    }
+
+    public class SecureFee
+    {
+        public string Name { get; set; }
+        public int Number { get; set; }
     }
 }

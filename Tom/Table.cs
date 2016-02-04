@@ -119,7 +119,7 @@ namespace Tom
             PrimaryKey = new[] { pk };
             if (pk.Field.SqlDbType == System.Data.SqlDbType.UniqueIdentifier)
             {
-                pk.DefaultFieldValue = "(newid())";
+                pk.FieldDefault = Settings.Current.NewDbValues[typeof(Guid)];
             }
         }
 

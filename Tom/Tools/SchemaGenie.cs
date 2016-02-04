@@ -72,7 +72,7 @@ GO", root.TableName, fieldsText, primaryKeyText);
                 column.Field.SqlDbType.ToString().ToLower(),
                 column.FieldArguments,
                 column.Field.IsNullable ? "NULL" : "NOT NULL",
-                column.DefaultFieldValue == null ? null : ("CONSTRAINT [DF_" + table.TableName + "_" + column.Field.Name + "]  DEFAULT " + column.DefaultFieldValue));
+                column.FieldDefault == null ? null : ("CONSTRAINT [DF_" + table.TableName + "_" + column.Field.Name + "]  DEFAULT " + column.FieldDefault));
 
             return declaration;
         }

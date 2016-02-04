@@ -12,22 +12,24 @@ namespace Tom
             Field = new Field(prop.PropertyType, prop.Name);
             if (Field.IsMapped)
             {
-                FieldArguments = Settings.Current.FieldArguments[prop.PropertyType];
-                DefaultFieldValue = Settings.Current.DefaultFieldValues[prop.PropertyType];
+                var fieldSettings = Settings.Current.GetFieldSettings(prop.PropertyType);
+                FieldArguments = fieldSettings.FieldArguments;
+                FieldDefault = fieldSettings.FieldDefault;
             }
         }
 
         public Field Field { get; private set; }
         public string FieldArguments { get; private set; }
-        public string DefaultFieldValue { get; set; }
+        public string FieldDefault { get; set; }
 
         /// <summary>
         /// Configure this column to be secure.
         /// </summary>
         public void Secure()
         {
-            FieldArguments = Settings.Current.FieldArguments[typeof(byte[])];
-            DefaultFieldValue = Settings.Current.DefaultFieldValues[typeof(byte[])];
+            var fieldSettings = Settings.Current.GetFieldSettings(typeof(byte[]));
+            FieldArguments = fieldSettings.FieldArguments;
+            FieldDefault = fieldSettings.FieldDefault;
             Field.Secure();
         }
     }
