@@ -13,6 +13,7 @@ namespace Tom
         Type ModelType { get; }
         string TableName { get; }
         IEnumerable<Column> Columns { get; }
+        IEnumerable<Column> UnmappedColumns { get; }
         IEnumerable<Column> PrimaryKey { get; }
     }
 
@@ -105,12 +106,14 @@ namespace Tom
 
     public class Table<TModel> : ITable<TModel>
     {
+        private readonly Column[] _Columns;
+
         public Table(TomBase tom)
         {
             Tom = tom;
             ModelType = typeof(TModel);
             TableName = ModelType.Name;
-            Columns = ModelType.GetProperties()
+            _Columns = ModelType.GetProperties()
                 .Select(p => new Column(p))
                 .ToArray();
             Command = new Command<TModel>(Columns.Select(o => o.Field));
@@ -126,13 +129,13 @@ namespace Tom
         public ITable<TModel> ConfigureColumn(Expression<Func<TModel, object>> selector, Action<Column> columnAction)
         {
             string name = selector.GetName();
-            columnAction(Columns.Single(o => o.Field.Name == name));
+            columnAction(_Columns.Single(o => o.Field.Name == name));
             return this;
         }
 
         public ITable<TModel> ConfigureAllColumns(Action<Column> columnAction, Func<Column, bool> filter = null)
         {
-            foreach (var param in Columns.Where(filter ?? (c => true)))
+            foreach (var param in _Columns.Where(filter ?? (c => true)))
             {
                 columnAction(param);
             }
@@ -306,7 +309,8 @@ namespace Tom
         public TomBase Tom { get; private set; }
         public Type ModelType { get; private set; }
         public string TableName { get; set; }
-        public IEnumerable<Column> Columns { get; private set; }
+        public IEnumerable<Column> Columns { get { return _Columns.Where(o => o.Field.IsMapped); } }
+        public IEnumerable<Column> UnmappedColumns { get { return _Columns.Where(o => !o.Field.IsMapped); } }
         public IEnumerable<Column> PrimaryKey { get; set; }
         public Command<TModel> Command { get; private set; }
     }

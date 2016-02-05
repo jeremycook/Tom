@@ -200,7 +200,7 @@ FETCH NEXT @ListAsyncPageSize ROWS ONLY";
         /// <returns></returns>
         public Command<TCommandModel> ConfigureField(string fieldName, Action<Field> parameterAction)
         {
-            var field = Fields.Single(o => o.Name.Equals(fieldName, StringComparison.InvariantCultureIgnoreCase));
+            var field = _Fields.Single(o => o.Name.Equals(fieldName, StringComparison.InvariantCultureIgnoreCase));
             parameterAction(field);
             return this;
         }
@@ -228,7 +228,7 @@ FETCH NEXT @ListAsyncPageSize ROWS ONLY";
         /// <returns></returns>
         public Command<TCommandModel> ConfigureAllFields(Action<Field> parameterAction, Func<Field, bool> filter = null)
         {
-            foreach (var param in Fields.Where(filter ?? (o => true)))
+            foreach (var param in _Fields.Where(filter ?? (o => true)))
             {
                 parameterAction(param);
             }

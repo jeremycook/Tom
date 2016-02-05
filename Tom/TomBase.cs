@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Data.SqlClient;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Tom
@@ -21,12 +19,14 @@ namespace Tom
         }
 
         /// <summary>
-        /// Create <see cref="Roots"/>.
+        /// Create <see cref="Roots"/> with default configurations.
         /// </summary>
         /// <returns></returns>
         protected virtual IEnumerable<ITable> CreateRoots()
         {
             var roots = new List<ITable>();
+
+            // Step one: create roots.
             var rootProps = GetType().GetProperties()
                 .Where(p => typeof(ITable).IsAssignableFrom(p.PropertyType));
             foreach (var prop in rootProps)
@@ -43,6 +43,48 @@ namespace Tom
                 }
                 prop.SetValue(this, root);
                 roots.Add(root);
+            }
+
+            // Step two: configure roots and columns based on other roots and columns.
+            var modelTypes = roots.ToDictionary(o => o.ModelType);
+            foreach (var root in roots)
+            {
+                foreach (var column in root.Columns)
+                {
+                    Type modelType = column.Field.Type;
+                    if (column.Field.Type.IsGenericType)
+                    {
+                        if (column.Field.Type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                        {
+                            modelType = column.Field.Type.GetGenericArguments()[0];
+                        }
+                        else if (column.Field.Type.GetGenericTypeDefinition() == typeof(Nullable<>))
+                        {
+                            modelType = column.Field.Type.GetGenericArguments()[0];
+                        }
+                    }
+                    else
+                    {
+                        Type ienumOf = column.Field.Type.GetInterface("System.Collections.Generic.IEnumerable`1");
+                        if (ienumOf != null)
+                        {
+                            modelType = ienumOf.GetGenericArguments()[0];
+                        }
+                    }
+
+                    // References to a root model type are not mapped by
+                    // default. Instead it is expected that there will be a
+                    // foreign key of some sort.
+                    //
+                    // Example where ReferenceToSomeRootId will be mapped but
+                    // the ReferenceToSomeRootId property will not:
+                    // public class SomeRoot { Guid Id }
+                    // public class OtherRoot { Guid Id, Guid ReferenceToSomeRootId, SomeRoot ReferenceToSomeRoot }
+                    if (modelTypes.ContainsKey(modelType))
+                    {
+                        column.Field.IsMapped = false;
+                    }
+                }
             }
 
             return roots;

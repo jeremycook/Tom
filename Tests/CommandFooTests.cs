@@ -12,16 +12,22 @@ namespace Tests
     [TestClass]
     public class CommandFooTests
     {
-        private readonly SqlConnection con;
+        private readonly Command<Bar> barCmd;
         private readonly Command<Foo> cmd;
+        private readonly SqlConnection con;
 
         public CommandFooTests()
         {
-            cmd = new Command<Foo>();
+            barCmd = new Command<Bar>();
+            cmd = new Command<Foo>()
+                .ConfigureField(o => o.Bar, c => c.IsMapped = false)
+                .ConfigureField(o => o.Bars, c => c.IsMapped = false);
+
             con = new SqlConnection(ConfigurationManager.ConnectionStrings["Db"].ConnectionString);
             con.Open();
 
             con.ExecuteAsync("truncate table dbo.Foo").Wait();
+            con.ExecuteAsync("truncate table dbo.Bar").Wait();
         }
 
         public void Dispose()
@@ -69,12 +75,24 @@ namespace Tests
                 Assert.AreEqual(actuals[i].Varbinary, actuals[i].Varbinary);
                 Assert.AreEqual(actuals[i].Fi, actuals[i].Fi);
                 Assert.AreEqual(actuals[i].Fees, actuals[i].Fees);
+                Assert.AreEqual(actuals[i].BarId, actuals[i].BarId);
+                Assert.AreEqual(actuals[i].Bar, actuals[i].Bar);
+                Assert.AreEqual(actuals[i].BarIds, actuals[i].BarIds);
+                Assert.AreEqual(actuals[i].Bars, actuals[i].Bars);
             }
         }
 
         [TestMethod]
         public async Task InsertFoos()
         {
+            var bar = new Bar { Id = Guid.NewGuid(), Name = "The one and only bar" };
+            await barCmd.ExecuteAsync(con, string.Format(
+                    "insert into dbo.Bar ({0}) values ({1})",
+                    barCmd.ToFieldNamesText(), barCmd.ToParameterNamesText()
+                ),
+                new[] { bar }
+            );
+
             var originals = Enumerable.Range(0, 500).Select(i => new Foo
             {
                 Id = Guid.NewGuid(),
@@ -96,10 +114,15 @@ namespace Tests
                 Varbinary = new byte[] { 0, 1, 2, 3 },
                 Fi = new Fi { Name = "I'm a fi you're a foo.", Number = 1 },
                 Fees = new[]
-                    {
-                        new Fee { Name = "I'm a fee you're a foo.", Number = 2 },
-                        new Fee { Name = "I'm another fee you're a foo.", Number = 3 }
-                    },
+                {
+                    new Fee { Name = "I'm a fee you're a foo.", Number = 2 },
+                    new Fee { Name = "I'm another fee you're a foo.", Number = 3 }
+                },
+                BarId = bar.Id,
+                BarIds = new[]
+                {
+                    bar.Id,
+                },
             }).OrderBy(o => o.Id).ToList();
 
             await cmd.ExecuteAsync(con, string.Format(
@@ -145,6 +168,12 @@ namespace Tests
                 Assert.AreEqual(originals[i].Fees.First().Number, actuals[i].Fees.First().Number);
                 Assert.AreEqual(originals[i].Fees.Last().Name, actuals[i].Fees.Last().Name);
                 Assert.AreEqual(originals[i].Fees.Last().Number, actuals[i].Fees.Last().Number);
+
+                Assert.AreEqual(actuals[i].BarId, actuals[i].BarId);
+                Assert.AreEqual(actuals[i].Bar, actuals[i].Bar);
+
+                Assert.AreEqual(actuals[i].BarIds, actuals[i].BarIds);
+                Assert.AreEqual(actuals[i].Bars, actuals[i].Bars);
             }
         }
 

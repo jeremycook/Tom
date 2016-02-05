@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Tests.Models
 {
@@ -37,6 +34,12 @@ namespace Tests.Models
 
         public SecureFi Fi { get; set; }
         public IEnumerable<SecureFee> Fees { get; set; }
+
+        public Guid? BarId { get; set; }
+        public Bar Bar { get; set; }
+
+        public IEnumerable<Guid> BarIds { get; set; }
+        public IEnumerable<Bar> Bars { get; set; }
     }
 
     public class SecureFi

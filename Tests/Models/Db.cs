@@ -1,4 +1,5 @@
-﻿using Tom;
+﻿using System.Linq;
+using Tom;
 
 namespace Tests.Models
 {
@@ -8,9 +9,10 @@ namespace Tests.Models
 
         protected override void Configure()
         {
-            Secure.ConfigureAllColumns(c => c.Secure(), c => c.Field.Name != "Id");
+            Secure.ConfigureAllColumns(c => c.Secure(), c => !Secure.PrimaryKey.Contains(c));
         }
 
+        public ITable<Bar> Bars { get; private set; }
         public ITable<Foo> Foos { get; private set; }
         public ITable<Secure> Secure { get; private set; }
     }

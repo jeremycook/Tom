@@ -12,17 +12,23 @@ namespace Tests
     [TestClass]
     public class CommandSecureTests
     {
+        private readonly Command<Bar> barCmd;
         private readonly Command<Secure> cmd;
         private readonly SqlConnection con;
 
         public CommandSecureTests()
         {
+            barCmd = new Command<Bar>();
+            cmd = new Command<Secure>()
+                .ConfigureAllFields(c => c.Secure(), c => c.Name != "Id")
+                .ConfigureField(o => o.Bar, c => c.IsMapped = false)
+                .ConfigureField(o => o.Bars, c => c.IsMapped = false);
+
             con = new SqlConnection(ConfigurationManager.ConnectionStrings["Db"].ConnectionString);
             con.Open();
 
             con.ExecuteAsync("truncate table dbo.Secure").Wait();
-            cmd = new Command<Secure>()
-                .ConfigureAllFields(c => c.Secure(), c => c.Name != "Id");
+            con.ExecuteAsync("truncate table dbo.Bar").Wait();
         }
 
         public void Dispose()
@@ -71,12 +77,24 @@ namespace Tests
                 Assert.AreEqual(actuals[i].Varbinary, actuals[i].Varbinary);
                 Assert.AreEqual(actuals[i].Fi, actuals[i].Fi);
                 Assert.AreEqual(actuals[i].Fees, actuals[i].Fees);
+                Assert.AreEqual(actuals[i].BarId, actuals[i].BarId);
+                Assert.AreEqual(actuals[i].Bar, actuals[i].Bar);
+                Assert.AreEqual(actuals[i].BarIds, actuals[i].BarIds);
+                Assert.AreEqual(actuals[i].Bars, actuals[i].Bars);
             }
         }
 
         [TestMethod]
         public async Task InsertSecures()
         {
+            var bar = new Bar { Id = Guid.NewGuid(), Name = "The one and only bar" };
+            await barCmd.ExecuteAsync(con, string.Format(
+                    "insert into dbo.Bar ({0}) values ({1})",
+                    barCmd.ToFieldNamesText(), barCmd.ToParameterNamesText()
+                ),
+                new[] { bar }
+            );
+
             var originals = Enumerable.Range(0, 500).Select(i => new Secure
             {
                 Id = Guid.NewGuid(),
@@ -101,6 +119,11 @@ namespace Tests
                 {
                     new SecureFee { Name = "I'm a fee you're a secure.", Number = 2 },
                     new SecureFee { Name = "I'm another fee you're a secure.", Number = 3 }
+                },
+                BarId = bar.Id,
+                BarIds = new[]
+                {
+                    bar.Id,
                 },
             }).OrderBy(o => o.Id).ToList();
 
@@ -147,6 +170,12 @@ namespace Tests
                 Assert.AreEqual(originals[i].Fees.First().Number, actuals[i].Fees.First().Number);
                 Assert.AreEqual(originals[i].Fees.Last().Name, actuals[i].Fees.Last().Name);
                 Assert.AreEqual(originals[i].Fees.Last().Number, actuals[i].Fees.Last().Number);
+
+                Assert.AreEqual(actuals[i].BarId, actuals[i].BarId);
+                Assert.AreEqual(actuals[i].Bar, actuals[i].Bar);
+
+                Assert.AreEqual(actuals[i].BarIds, actuals[i].BarIds);
+                Assert.AreEqual(actuals[i].Bars, actuals[i].Bars);
             }
         }
 

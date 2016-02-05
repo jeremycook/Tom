@@ -60,6 +60,7 @@
   <ItemGroup>
     <Compile Include="CommandFooTests.cs" />
     <Compile Include="ExecuteTests.cs" />
+    <Compile Include="Models\Bar.cs" />
     <Compile Include="Models\Db.cs" />
     <Compile Include="Models\Secure.cs" />
     <Compile Include="Models\Foo.cs" />
