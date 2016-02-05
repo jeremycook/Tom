@@ -31,45 +31,6 @@ namespace Tests
 
 
         [TestMethod]
-        public async Task ListAllSecure()
-        {
-            await db.Secure.AddRangeAsync(Enumerable.Range(0, 500).Select(i => new Secure
-            {
-                Id = Guid.NewGuid(),
-                Int = i,
-                Nvarchar = "Created",
-            }));
-            db.Commit();
-
-            var results = await db.Secure.ListAsync();
-
-            Assert.AreEqual(500, results.Count);
-        }
-
-        [TestMethod]
-        public async Task ListFilteredSecure()
-        {
-            var secures = Enumerable.Range(0, 500).Select(i => new Secure
-            {
-                Id = Guid.NewGuid(),
-                Int = i,
-                Nvarchar = "Created",
-            }).ToList();
-            await db.Secure.AddRangeAsync(secures);
-            db.Commit();
-            
-            var results = await db.Secure.ListAsync("Id in (@Guid1, @Guid2)", new
-            {
-                Guid1 = secures[0].Id,
-                Guid2 = secures[1].Id
-            });
-
-            Assert.AreEqual(2, results.Count);
-            Assert.AreEqual("Created", results[0].Nvarchar);
-        }
-
-
-        [TestMethod]
         public async Task AddSecure()
         {
             var secure = new Secure

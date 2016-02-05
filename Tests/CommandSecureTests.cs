@@ -120,7 +120,7 @@ namespace Tests
                 Assert.AreEqual(originals[i].Id, actuals[i].Id);
                 Assert.AreEqual(originals[i].Bit, actuals[i].Bit);
                 Assert.AreEqual(originals[i].BitNull, actuals[i].BitNull);
-                Assert.AreEqual(0, (originals[i].DateTime2 - actuals[i].DateTime2).Ticks);
+                Assert.AreEqual(originals[i].DateTime2, actuals[i].DateTime2);
                 Assert.AreEqual(originals[i].DateTime2Null, actuals[i].DateTime2Null);
                 Assert.AreEqual(originals[i].DateTimeOffset, actuals[i].DateTimeOffset);
                 Assert.AreEqual(originals[i].DateTimeOffsetNull, actuals[i].DateTimeOffsetNull);

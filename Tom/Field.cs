@@ -159,6 +159,7 @@ namespace Tom
                 }
                 else if (parameterValue is DateTime?)
                 {
+                    // Ticks seems to be the only reliable way to precisely encrypt DateTime.
                     byte[] clearBytes = BitConverter.GetBytes(((DateTime?)parameterValue).Value.Ticks);
                     parameterValue = Settings.Current.Encryptor.Encrypt(clearBytes);
                 }
