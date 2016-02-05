@@ -5,7 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Tom.Internal;
+using Tom.Helpers;
 
 namespace Tom
 {

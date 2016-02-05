@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 
-namespace Tom.Internal
+namespace Tom.Helpers
 {
     /// <summary>
     /// Symmetric data encryption and decryption using <see cref="AesCryptoServiceProvider"/>.

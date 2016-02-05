@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Tom.Internal
+namespace Tom.Helpers
 {
-    internal static class ExpressionHelpers
+    public static class ExpressionHelpers
     {
         public static string GetName<TModel>(this Expression<Func<TModel, object>> exp)
         {
