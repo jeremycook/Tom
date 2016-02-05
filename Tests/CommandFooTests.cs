@@ -65,13 +65,10 @@ namespace Tests
                 Assert.AreEqual(originals[i].GuidNull, actuals[i].GuidNull);
                 Assert.AreEqual(originals[i].Int, actuals[i].Int);
                 Assert.AreEqual(originals[i].IntNull, actuals[i].IntNull);
-
-                // By default null is automatically converted to "" for Nvarchar fields.
-                Assert.AreEqual("", actuals[i].Nvarchar);
-
-                Assert.IsNull(actuals[i].Fi);
-
-                Assert.IsNull(actuals[i].Fees);
+                Assert.AreEqual(actuals[i].Nvarchar, actuals[i].Nvarchar);
+                Assert.AreEqual(actuals[i].Varbinary, actuals[i].Varbinary);
+                Assert.AreEqual(actuals[i].Fi, actuals[i].Fi);
+                Assert.AreEqual(actuals[i].Fees, actuals[i].Fees);
             }
         }
 
@@ -96,6 +93,7 @@ namespace Tests
                 Guid = Guid.NewGuid(),
                 GuidNull = Guid.NewGuid(),
                 Nvarchar = "Created",
+                Varbinary = new byte[] { 0, 1, 2, 3 },
                 Fi = new Fi { Name = "I'm a fi you're a foo.", Number = 1 },
                 Fees = new[]
                     {
@@ -133,6 +131,10 @@ namespace Tests
                 Assert.AreEqual(originals[i].Int, actuals[i].Int);
                 Assert.AreEqual(originals[i].IntNull, actuals[i].IntNull);
                 Assert.AreEqual(originals[i].Nvarchar, actuals[i].Nvarchar);
+
+                Assert.IsNotNull(actuals[i].Varbinary);
+                Assert.AreEqual(originals[i].Varbinary.Length, actuals[i].Varbinary.Length);
+                Assert.IsTrue(originals[i].Varbinary.All(o => actuals[i].Varbinary.Contains(o)));
 
                 Assert.IsNotNull(actuals[i].Fi);
                 Assert.AreEqual(originals[i].Fi.Name, actuals[i].Fi.Name);

@@ -12,7 +12,6 @@ namespace Tests.Models
         }
 
         public ITable<Foo> Foos { get; private set; }
-        public ITable<Data> Data { get; private set; }
         public ITable<Secure> Secure { get; private set; }
     }
 }

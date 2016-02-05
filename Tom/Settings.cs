@@ -50,30 +50,30 @@ namespace Tom
 
         public readonly Dictionary<Type, FieldSettings> FieldSettings = new Dictionary<Type, FieldSettings>
         {
-            { typeof(Guid), new FieldSettings { SqlDbType = SqlDbType.UniqueIdentifier, IsNullable = false, EmptyValueFactory = () => Guid.Empty } },
+            { typeof(Guid), new FieldSettings { SqlDbType = SqlDbType.UniqueIdentifier, IsNullable = false, FieldDefault = "('00000000-0000-0000-0000-000000000000')", EmptyValueFactory = () => default(Guid) } },
             { typeof(Guid?), new FieldSettings { SqlDbType = SqlDbType.UniqueIdentifier, IsNullable = true } },
 
-            { typeof(int), new FieldSettings { SqlDbType = SqlDbType.Int, IsNullable = false, FieldDefault = "(0)", EmptyValueFactory = () => 0 } },
+            { typeof(int), new FieldSettings { SqlDbType = SqlDbType.Int, IsNullable = false, FieldDefault = "(0)", EmptyValueFactory = () => default(int) } },
             { typeof(int?), new FieldSettings { SqlDbType = SqlDbType.Int, IsNullable = true } },
 
-            { typeof(decimal), new FieldSettings { SqlDbType = SqlDbType.Decimal, IsNullable = false, FieldArguments = "(18, 0)", FieldDefault = "(0)", EmptyValueFactory = () => 0m } },
+            { typeof(decimal), new FieldSettings { SqlDbType = SqlDbType.Decimal, IsNullable = false, FieldArguments = "(18, 0)", FieldDefault = "(0)", EmptyValueFactory = () => default(decimal) } },
             { typeof(decimal?), new FieldSettings { SqlDbType = SqlDbType.Decimal, IsNullable = true, FieldArguments = "(18, 0)" } },
 
-            { typeof(double), new FieldSettings { SqlDbType = SqlDbType.Float, IsNullable = false, FieldDefault = "(0)", EmptyValueFactory = () => 0d } },
+            { typeof(double), new FieldSettings { SqlDbType = SqlDbType.Float, IsNullable = false, FieldDefault = "(0)", EmptyValueFactory = () => default(double) } },
             { typeof(double?), new FieldSettings { SqlDbType = SqlDbType.Float, IsNullable = true } },
 
-            { typeof(DateTime), new FieldSettings { SqlDbType = SqlDbType.DateTime2, IsNullable = false, FieldArguments = "(7)", EmptyValueFactory = () => DateTime.MinValue } },
+            { typeof(DateTime), new FieldSettings { SqlDbType = SqlDbType.DateTime2, IsNullable = false, FieldArguments = "(7)", FieldDefault = "('0001-01-01T00:00:00.0000000')", EmptyValueFactory = () => default(DateTime) } },
             { typeof(DateTime?), new FieldSettings { SqlDbType = SqlDbType.DateTime2, IsNullable = true, FieldArguments = "(7)" } },
 
-            { typeof(DateTimeOffset), new FieldSettings { SqlDbType = SqlDbType.DateTimeOffset, IsNullable = false, FieldArguments = "(7)", EmptyValueFactory = () => DateTimeOffset.MinValue } },
+            { typeof(DateTimeOffset), new FieldSettings { SqlDbType = SqlDbType.DateTimeOffset, IsNullable = false, FieldArguments = "(7)", FieldDefault = "('0001-01-01T00:00:00.0000000+00:00')", EmptyValueFactory = () => default(DateTimeOffset) } },
             { typeof(DateTimeOffset?), new FieldSettings { SqlDbType = SqlDbType.DateTimeOffset, IsNullable = true, FieldArguments = "(7)" } },
 
-            { typeof(bool), new FieldSettings { SqlDbType = SqlDbType.Bit, IsNullable = false, FieldDefault = "(0)", EmptyValueFactory = () => false } },
+            { typeof(bool), new FieldSettings { SqlDbType = SqlDbType.Bit, IsNullable = false, FieldDefault = "(0)", EmptyValueFactory = () => default(bool) } },
             { typeof(bool?), new FieldSettings { SqlDbType = SqlDbType.Bit, IsNullable = true } },
 
-            { typeof(string), new FieldSettings { SqlDbType = SqlDbType.NVarChar, IsNullable = false, FieldArguments = "(100)", FieldDefault = "('')", EmptyValueFactory = () => "" } },
+            { typeof(string), new FieldSettings { SqlDbType = SqlDbType.NVarChar, IsNullable = true, FieldArguments = "(100)" } },
 
-            { typeof(byte[]), new FieldSettings { SqlDbType = SqlDbType.VarBinary, IsNullable = false, FieldArguments = "(max)" } },
+            { typeof(byte[]), new FieldSettings { SqlDbType = SqlDbType.VarBinary, IsNullable = true, FieldArguments = "(max)" } },
 
             { typeof(object), new FieldSettings { SqlDbType = SqlDbType.NVarChar, IsNullable = true, FieldArguments = "(max)", IsSerialized = true } },
         };
@@ -96,6 +96,7 @@ namespace Tom
         public FieldSettings()
         {
             IsMapped = true;
+            IsNullable = true;
             EmptyValueFactory = () => null;
         }
 

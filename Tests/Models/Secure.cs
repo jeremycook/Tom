@@ -33,6 +33,8 @@ namespace Tests.Models
 
         public string Nvarchar { get; set; }
 
+        public byte[] Varbinary { get; set; }
+
         public SecureFi Fi { get; set; }
         public IEnumerable<SecureFee> Fees { get; set; }
     }
