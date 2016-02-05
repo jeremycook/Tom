@@ -1,10 +1,10 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
-
-namespace Tom.Helpers
+﻿namespace Tom.Helpers
 {
+    using System;
+    using System.IO;
+    using System.Linq;
+    using System.Security.Cryptography;
+
     /// <summary>
     /// Symmetric data encryption and decryption using <see cref="AesCryptoServiceProvider"/>.
     /// </summary>

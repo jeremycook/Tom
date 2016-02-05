@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Linq;
-
-namespace Tom
+﻿namespace Tom
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Data.SqlClient;
+    using System.Linq;
+
     /// <summary>
     /// Creates a <see cref="System.Data.SqlClient.SqlParameter"/> based on a
     /// <see cref="Tom.Field"/>, and pairs the two together. Useful when 

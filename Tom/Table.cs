@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Threading.Tasks;
-using Tom.Helpers;
-
-namespace Tom
+﻿namespace Tom
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Data.SqlClient;
+    using System.Linq;
+    using System.Linq.Expressions;
+    using System.Threading.Tasks;
+    using Tom.Helpers;
+
     public interface ITable
     {
         Type ModelType { get; }

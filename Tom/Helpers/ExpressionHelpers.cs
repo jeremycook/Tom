@@ -1,8 +1,8 @@
-﻿using System;
-using System.Linq.Expressions;
-
-namespace Tom.Helpers
+﻿namespace Tom.Helpers
 {
+    using System;
+    using System.Linq.Expressions;
+
     public static class ExpressionHelpers
     {
         public static string GetName<TModel>(this Expression<Func<TModel, object>> exp)

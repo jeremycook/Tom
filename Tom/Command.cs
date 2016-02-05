@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using Tom.Helpers;
-
-namespace Tom
+﻿namespace Tom
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Data.SqlClient;
+    using System.Linq;
+    using System.Linq.Expressions;
+    using System.Text.RegularExpressions;
+    using System.Threading.Tasks;
+    using Tom.Helpers;
+
     /// <summary>
     /// Configure fields and execute parameterized SQL commands for a common
     /// type, <see cref="TCommandModel"/>.

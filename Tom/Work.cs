@@ -1,9 +1,9 @@
-﻿using System;
-using System.Data.SqlClient;
-using System.Threading.Tasks;
-
-namespace Tom
+﻿namespace Tom
 {
+    using System;
+    using System.Data.SqlClient;
+    using System.Threading.Tasks;
+
     public class Work : IDisposable
     {
         public SqlConnection Connection { get; private set; }

@@ -1,7 +1,7 @@
-﻿using System.Reflection;
-
-namespace Tom
+﻿namespace Tom
 {
+    using System.Reflection;
+
     /// <summary>
     /// Describes a column for <see cref="ITable"/>'s.
     /// </summary>
