@@ -66,6 +66,7 @@
     <Compile Include="Models\Foo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QueryTests.cs" />
+    <Compile Include="TomReadTests.cs" />
     <Compile Include="TomFooReadTests.cs" />
     <Compile Include="TomSecureReadTests.cs" />
     <Compile Include="TomSecureTests.cs" />

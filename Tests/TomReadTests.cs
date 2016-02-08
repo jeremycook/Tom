@@ -10,12 +10,12 @@ using System.Collections.Generic;
 namespace Tests
 {
     [TestClass]
-    public class TomFooReadTests : IDisposable
+    public class TomReadTests : IDisposable
     {
         private readonly Db db;
         private readonly List<Foo> originals;
 
-        public TomFooReadTests()
+        public TomReadTests()
         {
             db = new Db("Db");
 
@@ -62,39 +62,9 @@ namespace Tests
 
 
         [TestMethod]
-        public async Task ListAll()
-        {
-            var results = await db.Foos.ListAsync();
-
-            Assert.AreEqual(500, results.Count);
-        }
-
-        [TestMethod]
-        public async Task Filter()
-        {
-
-            var results = await db.Foos.ListAsync("Id in (@Guid1, @Guid2)", parameters: new
-            {
-                Guid1 = originals[0].Id,
-                Guid2 = originals[1].Id
-            });
-
-            Assert.AreEqual(2, results.Count);
-        }
-
-        [TestMethod]
-        public async Task Page()
-        {
-
-            var results = await db.Foos.ListAsync(page: 2, pageSize: 100);
-
-            Assert.AreEqual(100, results.Count);
-        }
-
-        [TestMethod]
         public async Task Scalar()
         {
-            int count = await db.Foos.ScalarAsync("count(*)");
+            int count = await db.ScalarAsync("select count(*) from dbo.Foo");
 
             Assert.AreEqual(500, count);
         }
@@ -102,61 +72,13 @@ namespace Tests
         [TestMethod]
         public async Task ScalarWithFilter()
         {
-            int count = await db.Foos.ScalarAsync("count(*)", "Id in (@Guid1, @Guid2)", new
+            int count = await db.ScalarAsync("select count(*) from dbo.Foo where Id in (@Guid1, @Guid2)", new
             {
                 Guid1 = originals[0].Id,
                 Guid2 = originals[1].Id
             });
 
             Assert.AreEqual(2, count);
-        }
-
-        [TestMethod]
-        public async Task Count()
-        {
-            int count = await db.Foos.CountAsync();
-
-            Assert.AreEqual(500, count);
-        }
-
-        [TestMethod]
-        public async Task CountWithFilter()
-        {
-            int count = await db.Foos.CountAsync("Id in (@Guid1, @Guid2)", new
-            {
-                Guid1 = originals[0].Id,
-                Guid2 = originals[1].Id
-            });
-
-            Assert.AreEqual(2, count);
-        }
-
-        [TestMethod]
-        public async Task Any()
-        {
-            bool any = await db.Foos.AnyAsync();
-
-            Assert.IsTrue(any);
-        }
-
-        [TestMethod]
-        public async Task AnyWithFilter()
-        {
-            bool any = await db.Foos.AnyAsync("Id in (@Guid1, @Guid2)", new
-            {
-                Guid1 = originals[0].Id,
-                Guid2 = originals[1].Id
-            });
-
-            Assert.IsTrue(any);
-        }
-
-        [TestMethod]
-        public async Task NotAnyWithFilter()
-        {
-            bool any = await db.Foos.AnyAsync("Id = '00000000-0000-0000-0000-000000000000'");
-
-            Assert.IsFalse(any);
         }
     }
 }

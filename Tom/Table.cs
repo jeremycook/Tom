@@ -37,24 +37,15 @@
         ITable<TModel> ConfigureAllColumns(Action<Column> columnAction, Func<Column, bool> filter = null);
 
         /// <summary>
-        /// List all models.
-        /// </summary>
-        /// <param name="orderBy"></param>
-        /// <param name="page"></param>
-        /// <param name="pageSize"></param>
-        /// <returns></returns>
-        Task<IList<TModel>> ListAsync(string orderBy = null, int page = Settings.DefaultPage, int pageSize = Settings.DefaultPageSize);
-
-        /// <summary>
         /// List a filtered set of models.
         /// </summary>
         /// <param name="where"></param>
-        /// <param name="parameters"></param>
         /// <param name="orderBy"></param>
+        /// <param name="parameters"></param>
         /// <param name="page"></param>
         /// <param name="pageSize"></param>
         /// <returns></returns>
-        Task<IList<TModel>> ListAsync(string where, object parameters, string orderBy = null, int page = Settings.DefaultPage, int pageSize = Settings.DefaultPageSize);
+        Task<IList<TModel>> ListAsync(string where = null, string orderBy = null, object parameters = null, int page = Settings.DefaultPage, int pageSize = Settings.DefaultPageSize);
 
         /// <summary>
         /// Add a <typeparamref name="TModel"/> within a transaction.
@@ -144,57 +135,29 @@
         }
 
         /// <summary>
-        /// List all <see cref="TModel"/>s.
-        /// </summary>
-        /// <param name="orderBy"></param>
-        /// <param name="page"></param>
-        /// <param name="pageSize"></param>
-        /// <returns></returns>
-        public async Task<IList<TModel>> ListAsync(string orderBy = null, int page = Settings.DefaultPage, int pageSize = Settings.DefaultPageSize)
-        {
-            using (var cx = new SqlConnection(Tom.ConnectionString))
-            {
-                await cx.OpenAsync();
-
-                var results = await Command.ListAsync(cx,
-                    string.Format(
-                        "select {0} from dbo.[{1}] order by {2}",
-                        Command.ToFieldNamesText(),
-                        TableName,
-                        orderBy ?? string.Join(", ", PrimaryKey.Select(o => "[" + o.Field.Name + "]"))
-                    ),
-                    page: page,
-                    pageSize: pageSize
-                );
-
-                return results;
-            };
-        }
-
-        /// <summary>
         /// List a filtered set of <see cref="TModel"/>.
         /// </summary>
         /// <param name="where"></param>
-        /// <param name="parameters"></param>
         /// <param name="orderBy"></param>
+        /// <param name="parameters"></param>
         /// <param name="page"></param>
         /// <param name="pageSize"></param>
         /// <returns></returns>
-        public async Task<IList<TModel>> ListAsync(string where, object parameters, string orderBy = null, int page = Settings.DefaultPage, int pageSize = Settings.DefaultPageSize)
+        public async Task<IList<TModel>> ListAsync(string where = null, string orderBy = null, object parameters = null, int page = Settings.DefaultPage, int pageSize = Settings.DefaultPageSize)
         {
             using (var cx = new SqlConnection(Tom.ConnectionString))
             {
                 await cx.OpenAsync();
 
                 var results = await Command.ListAsync(cx,
-                    string.Format(
-                        "select {0} from dbo.[{1}] {2} order by {3}",
-                        Command.ToFieldNamesText(),
-                        TableName,
-                        "where " + where,
-                        orderBy ?? GetPrimaryKeySelect()
-                    ),
-                    parameters
+                    "select " +
+                        Command.ToFieldNamesText() +
+                        " from dbo.[" + TableName + "]" +
+                        (where != null ? (" where " + where) : "") +
+                        "order by " + (orderBy ?? GetPrimaryKeySelect()),
+                    parameters,
+                    page,
+                    pageSize
                 );
 
                 return results;

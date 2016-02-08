@@ -73,7 +73,7 @@ namespace Tests
         public async Task Filter()
         {
 
-            var results = await db.Secure.ListAsync("Id in (@Guid1, @Guid2)", new
+            var results = await db.Secure.ListAsync("Id in (@Guid1, @Guid2)", parameters: new
             {
                 Guid1 = originals[0].Id,
                 Guid2 = originals[1].Id
