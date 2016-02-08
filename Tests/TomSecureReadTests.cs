@@ -90,5 +90,25 @@ namespace Tests
 
             Assert.AreEqual(100, results.Count);
         }
+
+        [TestMethod]
+        public async Task Scalar()
+        {
+            int count = await db.ScalarAsync("select count(*) from dbo.Secure");
+
+            Assert.AreEqual(500, count);
+        }
+
+        [TestMethod]
+        public async Task ScalarWithFilter()
+        {
+            int count = await db.ScalarAsync("select count(*) from dbo.Secure where Id in (@Guid1, @Guid2)", new
+            {
+                Guid1 = originals[0].Id,
+                Guid2 = originals[1].Id
+            });
+
+            Assert.AreEqual(2, count);
+        }
     }
 }

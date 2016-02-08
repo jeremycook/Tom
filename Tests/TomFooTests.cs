@@ -31,37 +31,6 @@ namespace Tests
 
 
         [TestMethod]
-        public async Task ListAllFoos()
-        {
-            await db.Foos.AddRangeAsync(Enumerable.Range(0, 500).Select(i => new Foo
-            {
-                Id = Guid.NewGuid(),
-                Int = i,
-            }));
-            db.Commit();
-
-            await db.Foos.ListAsync();
-        }
-
-        [TestMethod]
-        public async Task ListFilteredFoos()
-        {
-            await db.Foos.AddRangeAsync(Enumerable.Range(0, 500).Select(i => new Foo
-            {
-                Id = Guid.NewGuid(),
-                Int = i,
-            }));
-            db.Commit();
-            
-            await db.Foos.ListAsync("Int between @Lower and @Upper", new
-            {
-                Lower = 500,
-                Upper = 600
-            });
-        }
-
-
-        [TestMethod]
         public async Task AddFoo()
         {
             var foo = new Foo

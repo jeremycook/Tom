@@ -10,6 +10,7 @@
 
     public interface ITable
     {
+        TomBase Tom { get; }
         Type ModelType { get; }
         string TableName { get; }
         IEnumerable<Column> Columns { get; }

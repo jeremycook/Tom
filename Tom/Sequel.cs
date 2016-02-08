@@ -17,14 +17,7 @@
             int page = 0,
             int pageSize = 25)
         {
-            string[] inUseParameters = GetInUseParameters(query);
-
-            SqlParameter[] sqlparameters = parameterModel == null ?
-                new SqlParameter[0] :
-                parameterModel.GetType().GetProperties()
-                    .Where(o => inUseParameters.Contains(o.Name, StringComparer.InvariantCultureIgnoreCase))
-                    .Select(o => new SqlParameter(o.Name, value: o.GetValue(parameterModel)))
-                    .ToArray();
+            SqlParameter[] sqlparameters = GetSqlParameters(query, parameterModel);
 
             using (var cmd = connection.CreateCommand())
             {
@@ -71,6 +64,37 @@ FETCH NEXT @ListAsyncPageSize ROWS ONLY";
                     throw;
                 }
             }
+        }
+
+        public static async Task<int> ScalarAsync(this SqlConnection connection, string query, object parameterModel = null)
+        {
+            return await connection.ScalarAsync<int>(query, parameterModel);
+        }
+
+        public static async Task<TOut> ScalarAsync<TOut>(this SqlConnection connection, string query, object parameterModel = null)
+        {
+            SqlParameter[] sqlparameters = GetSqlParameters(query, parameterModel);
+
+            using (var cmd = connection.CreateCommand())
+            {
+                cmd.CommandText = query;
+                cmd.Parameters.AddRange(sqlparameters);
+                return (TOut)(await cmd.ExecuteScalarAsync());
+            }
+        }
+
+        private static SqlParameter[] GetSqlParameters(string query, object parameterModel)
+        {
+            string[] inUseParameters = GetInUseParameters(query);
+
+            SqlParameter[] sqlparameters = parameterModel == null ?
+                new SqlParameter[0] :
+                parameterModel.GetType().GetProperties()
+                    .Where(o => inUseParameters.Contains(o.Name, StringComparer.InvariantCultureIgnoreCase))
+                    .Select(o => new SqlParameter(o.Name, value: o.GetValue(parameterModel)))
+                    .ToArray();
+
+            return sqlparameters;
         }
 
         private static string[] GetInUseParameters(string query)

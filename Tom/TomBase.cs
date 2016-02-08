@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Configuration;
+    using System.Data.SqlClient;
     using System.Linq;
     using System.Threading.Tasks;
 
@@ -137,6 +138,26 @@
             // and cleanup.
             Work.Dispose();
             Work = null;
+        }
+
+        public async Task<int> ScalarAsync(string query, object parameters = null)
+        {
+            using (var cx = new SqlConnection(ConnectionString))
+            {
+                await cx.OpenAsync();
+
+                return await cx.ScalarAsync<int>(query, parameters);
+            }
+        }
+
+        public async Task<TOut> ScalarAsync<TOut>(string query, object parameters = null)
+        {
+            using (var cx = new SqlConnection(ConnectionString))
+            {
+                await cx.OpenAsync();
+
+                return await cx.ScalarAsync<TOut>(query, parameters);
+            }
         }
 
         /// <summary>

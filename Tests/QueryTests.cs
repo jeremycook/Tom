@@ -77,5 +77,24 @@ namespace Tests
 
             Assert.AreEqual(25, result.Count);
         }
+
+        [TestMethod]
+        public async Task Scalar()
+        {
+            int count = await sql.ScalarAsync("select count(*) from dbo.Foo");
+
+            Assert.AreEqual(1000, count);
+        }
+
+        [TestMethod]
+        public async Task ScalarWithFilter()
+        {
+            int count = await sql.ScalarAsync(
+                "select count(*) from dbo.Foo where Int between @First and @last",
+                new { First = 500, Last = 599, NotUsed = Guid.Empty }
+            );
+
+            Assert.AreEqual(100, count);
+        }
     }
 }
